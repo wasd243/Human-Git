@@ -33,7 +33,9 @@ mod modules {
 }
 
 // 2. 引入我们需要的东西
-// use crate::modules::repo::state::RepoWatcher;
+use tokio::fs;
+use tokio::fs::{self, Event, Watcher, WatcherBuilder};
+use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -52,5 +54,32 @@ async fn main() -> anyhow::Result<()> {
     */
 
     println!("[SUCCESS] HumanGit is now visually active.");
+
+    // 创建文件监视器
+    let current_dir = fs::current_dir().await?;
+    let mut watcher = WatcherBuilder::new()
+        .filter(|event| {
+            let path = event.path.as_str();
+            // 忽略 .git 和 target 目录
+            if path == ".git" || path == "target" {
+                true // 忽略
+            } else if path.starts_with(".git/") || path.starts_with("target/") {
+                true // 忽略
+            } else {
+                false
+            }
+        })
+        .build()
+        .unwrap();
+
+    watcher.watch(&current_dir, fs::Event::Create).await?;
+    watcher.watch(&current_dir, fs::Event::Modify).await?;
+    watcher.watch(&current_dir, fs::Event::Remove).await?;
+
+    loop {
+        let event = watcher.next().await;
+        println!("event: {:?}", event);
+    }
+
     Ok(())
 }
