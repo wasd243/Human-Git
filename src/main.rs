@@ -119,16 +119,38 @@ async fn main() -> anyhow::Result<()> {
             );
 
             // 2. 调用 DiffEngine 获取状态
+use std::sync::Mutex;
+
+// 在 main 函数外部定义一个静态变量来存储总行数
+static TOTAL_LINES: Mutex<(i32, i32)> = Mutex::new((0, 0));
+
             match modules::repo::diff::get_stats(".") {
-                Ok(status) => {
-                    let status_msg = status.trim();
-                    color::log_color("[GIT]", &format!("Status: {}", status_msg), "cyan");
+                Ok(stats) => {
+                    // 计算效率（总修改行数）
+                    let total_changed = stats.insertions + stats.deletions;
+
+                    // 更新总行数计数器
+                    let mut total = TOTAL_LINES.lock().unwrap();
+                    total.0 += stats.insertions;
+                    total.1 += stats.deletions;
+
+                    // 输出效率信息
+                    color::log_color(
+                        "[SYSTEM]",
+                        &format!("You just coded {} lines, deleted {} lines today!", stats.insertions, stats.deletions),
+                        "green",
+                    );
 
                     // 3. 【防丢失核心】存入 shadow_history 表
-                    // 使用 {:?} 记录路径数组，使用 status_msg 记录变动统计
+                    // 使用 {:?} 记录路径数组，使用 stats 记录变动统计
                     let _ = db_conn.execute(
-                        "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
-                        (format!("{:?}", event.paths), status_msg),
+                        "INSERT INTO shadow_history (file_path, insertions, deletions, files_changed) VALUES (?1, ?2, ?3, ?4)",
+                        (
+                            format!("{:?}", event.paths),
+                            stats.insertions,
+                            stats.deletions,
+                            stats.files_changed
+                        ),
                     );
                 }
                 Err(e) => {
