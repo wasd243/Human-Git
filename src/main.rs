@@ -46,6 +46,8 @@ async fn main() -> anyhow::Result<()> {
     println!("[STATUS] Monitoring baseline reality...");
     println!("--------------------------------------------------");
 
+    let _conn = modules::shared::utils::utils::Database::init()?;
+
     let current_dir = env::current_dir()?;
 
     // ================= 新增：解析 .gitignore =================
