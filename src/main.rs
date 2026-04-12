@@ -28,6 +28,7 @@ mod modules {
 
         pub mod utils {
             pub mod utils;
+            pub mod color;
         }
     }
 }
@@ -37,9 +38,11 @@ use ignore::gitignore::GitignoreBuilder;
 use notify::{Event, RecursiveMode, Watcher};
 use std::env;
 use tokio::sync::mpsc;
+use crate::modules::shared::utils::color;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // 更改这些字符串，为其标上对应颜色
     println!("--------------------------------------------------");
     println!("[SYSTEM] HumanGit Protocol Initialized.");
     println!("[STATUS] Monitoring baseline reality...");
