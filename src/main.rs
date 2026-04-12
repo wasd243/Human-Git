@@ -167,7 +167,7 @@
                      if accumulated >= 500 {
                          color::log_color("[SYSTEM]", "Threshold reached (>=500 lines). Triggering shadow sync...", "yellow");
                          // 触发 shadow sync（在当前工作目录执行）
-                         match crate::modules::git::executor::run_shadow_sync(".") {
+                         match modules::git::executor::run_shadow_sync(".") {
                              Ok(_) => {
                                  color::log_color("[SYSTEM]", "Shadow sync finished successfully.", "green");
                              }
