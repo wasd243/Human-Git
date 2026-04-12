@@ -106,9 +106,12 @@ async fn main() -> anyhow::Result<()> {
 
     color::log_color("[SUCCESS]", "HumanGit is now visually active.", "green");
 
+    // 在 main 函数内部，tokio::spawn 上方引入
+    use std::sync::Mutex;
+    static TOTAL_LINES: Mutex<(i32, i32)> = Mutex::new((0, 0));
+
     tokio::spawn(async move {
-        let db_conn =
-            rusqlite::Connection::open("humangit_cache.db").expect("无法在线程内打开数据库");
+        let db_conn = rusqlite::Connection::open("humangit_cache.db").expect("Could Not Open!");
 
         while let Some(event) = rx.recv().await {
             println!("--------------------------------------------------");
@@ -118,15 +121,29 @@ async fn main() -> anyhow::Result<()> {
                 "yellow",
             );
 
-            // 2. 调用 DiffEngine 获取状态
-use std::sync::Mutex;
+            // ==========================================
+            // 1. 恢复原来的逻辑：单独获取具体改变了哪些文件
+            // 我们直接在这里调用 git status，不依赖 Aider 乱改的 diff.rs
+            // ==========================================
+            let raw_status = match std::process::Command::new("git")
+                .arg("status")
+                .arg("--short")
+                .output()
+            {
+                Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
+                Err(_) => String::new(),
+            };
 
-// 在 main 函数外部定义一个静态变量来存储总行数
-static TOTAL_LINES: Mutex<(i32, i32)> = Mutex::new((0, 0));
+            let status_msg = raw_status.trim();
+            if !status_msg.is_empty() {
+                color::log_color("[GIT]", &format!("Status:\n{}", status_msg), "cyan");
+            }
 
+            // ==========================================
+            // 2. 保留 Aider 的新逻辑：获取变动行数统计
+            // ==========================================
             match modules::repo::diff::get_stats(".") {
                 Ok(stats) => {
-                    // 计算效率（总修改行数）
                     let total_changed = stats.insertions + stats.deletions;
 
                     // 更新总行数计数器
@@ -134,29 +151,34 @@ static TOTAL_LINES: Mutex<(i32, i32)> = Mutex::new((0, 0));
                     total.0 += stats.insertions;
                     total.1 += stats.deletions;
 
-                    // 输出效率信息
                     color::log_color(
                         "[SYSTEM]",
-                        &format!("You just coded {} lines, deleted {} lines today!", stats.insertions, stats.deletions),
+                        &format!("You just coded {} lines, deleted {} lines today!", total.0, total.1),
                         "green",
                     );
-
-                    // 3. 【防丢失核心】存入 shadow_history 表
-                    // 使用 {:?} 记录路径数组，使用 stats 记录变动统计
-                    let _ = db_conn.execute(
-                        "INSERT INTO shadow_history (file_path, insertions, deletions, files_changed) VALUES (?1, ?2, ?3, ?4)",
-                        (
-                            format!("{:?}", event.paths),
-                            stats.insertions,
-                            stats.deletions,
-                            stats.files_changed
-                        ),
+                    color::log_color(
+                        "[SYSTEM]",
+                        &format!("You changed {} files, total {} lines mutated!", stats.files_changed, total_changed),
+                        "green",
                     );
                 }
                 Err(e) => {
-                    color::log_color("[ERR]", &format!("Failed to compute diff: {}", e), "red");
+                    // 如果 diff 统计失败，只打印错误，不影响主流程
+                    eprintln!("[ERR] Failed to compute diff stats: {}", e);
                 }
             }
+
+            // ==========================================
+            // 3. 【防丢失核心】存入 shadow_history 表
+            // ⚠️ 修复 Aider 的乱改，改回存入 diff_stats，防止 SQL 报错！
+            // ==========================================
+            let _ = db_conn.execute(
+                "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
+                (
+                    format!("{:?}", event.paths),
+                    status_msg, // 存入具体的文件变动列表
+                ),
+            );
         }
     });
 
