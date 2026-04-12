@@ -43,6 +43,7 @@ use tokio::sync::mpsc;
 
 // 模块级的全局行数统计器（插入, 删除）
 static TOTAL_LINES: Mutex<(i32, i32)> = Mutex::new((0, 0));
+static LAST_SYNC_COUNT: Mutex<i32> = Mutex::new(0);
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -110,10 +111,27 @@ async fn main() -> anyhow::Result<()> {
 
     color::log_color("[SUCCESS]", "HumanGit is now visually active.", "green");
 
+    // 替换整个 tokio::spawn(async move { ... }) 内部
     tokio::spawn(async move {
         let db_conn = rusqlite::Connection::open("humangit_cache.db").expect("Could Not Open!");
+        let debounce_duration = std::time::Duration::from_millis(500);
 
-        while let Some(event) = rx.recv().await {
+        loop {
+            // 阻塞等待第一个事件
+            let Some(mut last_event) = rx.recv().await else { break };
+
+            // 在 500ms 窗口内持续消费后续事件，合并为一次处理
+            let deadline = tokio::time::Instant::now() + debounce_duration;
+            loop {
+                match tokio::time::timeout_at(deadline, rx.recv()).await {
+                    Ok(Some(newer_event)) => last_event = newer_event,
+                    _ => break, // 超时或 channel 关闭
+                }
+            }
+
+            // ── 以下逻辑与原来完全一致，只是每次防抖后执行一次 ──
+            let event = last_event;
+
             println!("--------------------------------------------------");
             color::log_color(
                 "[EVENT]",
@@ -121,10 +139,6 @@ async fn main() -> anyhow::Result<()> {
                 "yellow",
             );
 
-            // ==========================================
-            // 1. 恢复原来的逻辑：单独获取具体改变了哪些文件
-            // 我们直接在这里调用 git status，不依赖 Aider 乱改的 diff.rs
-            // ==========================================
             let raw_status = match std::process::Command::new("git")
                 .arg("status")
                 .arg("--short")
@@ -139,17 +153,12 @@ async fn main() -> anyhow::Result<()> {
                 color::log_color("[GIT]", &format!("Status:\n{}", status_msg), "cyan");
             }
 
-            // ==========================================
-            // 2. 保留 Aider 的新逻辑：获取变动行数统计
-            // ==========================================
             match modules::repo::diff::get_stats(".") {
                 Ok(stats) => {
                     let total_changed = stats.insertions + stats.deletions;
 
-                    // 更新总行数计数器
-                    // 修改 main.rs 这一段
                     let mut total = TOTAL_LINES.lock().unwrap();
-                    total.0 = stats.insertions; // 直接反映当前仓库的 diff 状态
+                    total.0 = stats.insertions;
                     total.1 = stats.deletions;
                     color::log_color(
                         "[SYSTEM]",
@@ -168,52 +177,37 @@ async fn main() -> anyhow::Result<()> {
                         "green",
                     );
 
-                    // 如果累计变动行数（插入+删除）达到阈值，触发 shadow sync
                     let accumulated = total.0 + total.1;
-                    if accumulated >= 500 {
+                    let mut last_sync = LAST_SYNC_COUNT.lock().unwrap();
+                    let delta = (accumulated - *last_sync).abs();
+                    if delta >= 500 {
                         color::log_color(
                             "[SYSTEM]",
-                            "Threshold reached (>=500 lines). Triggering shadow sync...",
+                            &format!("Milestone reached: +{} new lines. Syncing...", delta),
                             "yellow",
                         );
-                        // 触发 shadow sync（在当前工作目录执行）
+
                         match modules::git::executor::run_shadow_sync(".") {
                             Ok(_) => {
-                                color::log_color(
-                                    "[SYSTEM]",
-                                    "Shadow sync finished successfully.",
-                                    "green",
-                                );
+                                *last_sync = accumulated;
+                                color::log_color("[SYSTEM]", "Shadow sync finished successfully.", "green");
                             }
                             Err(e) => {
                                 eprintln!("[ERR] Shadow sync failed: {}", e);
-                                color::log_color(
-                                    "[SYSTEM]",
-                                    "Shadow sync failed (see stderr).",
-                                    "red",
-                                );
                             }
                         }
-                        // 触发后重置计数，避免重复触发
-                        total.0 = 0;
-                        total.1 = 0;
                     }
                 }
                 Err(e) => {
-                    // 如果 diff 统计失败，只打印错误，不影响主流程
                     eprintln!("[ERR] Failed to compute diff stats: {}", e);
                 }
             }
 
-            // ==========================================
-            // 3. 【防丢失核心】存入 shadow_history 表
-            // ⚠️ 修复 Aider 的乱改，改回存入 diff_stats，防止 SQL 报错！
-            // ==========================================
             let _ = db_conn.execute(
                 "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
                 (
                     format!("{:?}", event.paths),
-                    status_msg, // 存入具体的文件变动列表
+                    status_msg,
                 ),
             );
         }

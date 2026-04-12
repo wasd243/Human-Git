@@ -24,6 +24,15 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     };
 
+    // --- 新增安全检查 ---
+    let current = run_git(&["rev-parse", "--abbrev-ref", "HEAD"])?;
+    if current == "humangit-shadow" {
+        // 如果已经在这个分支了，说明上次同步可能中断了，直接强制切回去
+        // 这里假设你的主分支是 develop，或者你手动切回。我们这里先报错保护。
+        return Err(anyhow::anyhow!("Already in shadow branch. Please switch back to develop manually first."));
+    }
+    // ------------------
+
     // 1) 获取当前分支名，记下“回家的路”
     let original_branch = run_git(&["rev-parse", "--abbrev-ref", "HEAD"])?;
 
