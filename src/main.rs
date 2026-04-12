@@ -27,18 +27,23 @@ mod modules {
         pub mod errors;
 
         pub mod utils {
-            pub mod utils;
             pub mod color;
+            pub mod utils;
         }
     }
 }
 
 // 2. 引入我们需要的东西
+use crate::modules::shared::utils::color;
 use ignore::gitignore::GitignoreBuilder;
 use notify::{Event, RecursiveMode, Watcher};
 use std::env;
+use std::sync::Mutex;
 use tokio::sync::mpsc;
-use crate::modules::shared::utils::color;
+
+// 模块级的全局行数统计器（插入, 删除）
+static TOTAL_LINES: Mutex<(i32, i32)> = Mutex::new((0, 0));
+static LAST_SYNC_COUNT: Mutex<i32> = Mutex::new(0);
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -71,10 +76,12 @@ async fn main() -> anyhow::Result<()> {
                 // 如果是 .git 内部变动或编译产物，直接拦截，根本不去走正则匹配
                 let path_str = p.to_string_lossy();
                 if path_str.contains(".git")
-                    || path_str.contains("target")
-                    || path_str.contains(".idea")
-                    || path_str.ends_with('~')  // 重点：匹配以 ~ 结尾的文件
-                    || path_str.contains("__")  // 顺便屏蔽一些可能的临时目录
+                     || path_str.contains("target")
+                     || path_str.contains(".idea")
+                     || path_str.contains("humangit_cache.db")
+                     || path_str.ends_with('~')  // 重点：匹配以 ~ 结尾的文件
+                     || path_str.contains("__")
+                // 顺便屏蔽一些可能的临时目录
                 {
                     return true;
                 }
@@ -104,24 +111,105 @@ async fn main() -> anyhow::Result<()> {
 
     color::log_color("[SUCCESS]", "HumanGit is now visually active.", "green");
 
+    // 替换整个 tokio::spawn(async move { ... }) 内部
     tokio::spawn(async move {
-        while let Some(event) = rx.recv().await {
+        let db_conn = rusqlite::Connection::open("humangit_cache.db").expect("Could Not Open!");
+        let debounce_duration = std::time::Duration::from_millis(500);
+
+        loop {
+            // 阻塞等待第一个事件
+            let Some(mut last_event) = rx.recv().await else { break };
+
+            // 在 500ms 窗口内持续消费后续事件，合并为一次处理
+            let deadline = tokio::time::Instant::now() + debounce_duration;
+            loop {
+                match tokio::time::timeout_at(deadline, rx.recv()).await {
+                    Ok(Some(newer_event)) => last_event = newer_event,
+                    _ => break, // 超时或 channel 关闭
+                }
+            }
+
+            // ── 以下逻辑与原来完全一致，只是每次防抖后执行一次 ──
+            let event = last_event;
+
             println!("--------------------------------------------------");
             color::log_color(
                 "[EVENT]",
                 &format!("Real-time mutation: {:?}", event.paths),
-                "yellow"
+                "yellow",
             );
 
-            // 调用我们刚写的 DiffEngine
-            match modules::repo::diff::get_stats(".") {
-                Ok(status) => color::log_color(
-                    "[GIT]",
-                    &format!("Status: {}", status.trim()),
-                    "cyan"
-                ),
-                Err(e) => eprintln!("[ERR] Failed to compute diff: {}", e),
+            let raw_status = match std::process::Command::new("git")
+                .arg("status")
+                .arg("--short")
+                .output()
+            {
+                Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
+                Err(_) => String::new(),
+            };
+
+            let status_msg = raw_status.trim();
+            if !status_msg.is_empty() {
+                color::log_color("[GIT]", &format!("Status:\n{}", status_msg), "cyan");
             }
+
+            match modules::repo::diff::get_stats(".") {
+                Ok(stats) => {
+                    let total_changed = stats.insertions + stats.deletions;
+
+                    let mut total = TOTAL_LINES.lock().unwrap();
+                    total.0 = stats.insertions;
+                    total.1 = stats.deletions;
+                    color::log_color(
+                        "[SYSTEM]",
+                        &format!(
+                            "You just coded {} lines, deleted {} lines today!",
+                            total.0, total.1
+                        ),
+                        "green",
+                    );
+                    color::log_color(
+                        "[SYSTEM]",
+                        &format!(
+                            "You changed {} files, total {} lines mutated!",
+                            stats.files_changed, total_changed
+                        ),
+                        "green",
+                    );
+
+                    let accumulated = total.0 + total.1;
+                    let mut last_sync = LAST_SYNC_COUNT.lock().unwrap();
+                    let delta = (accumulated - *last_sync).abs();
+                    if delta >= 500 {
+                        color::log_color(
+                            "[SYSTEM]",
+                            &format!("Milestone reached: +{} new lines. Syncing...", delta),
+                            "yellow",
+                        );
+
+                        match modules::git::executor::run_shadow_sync(".") {
+                            Ok(_) => {
+                                *last_sync = accumulated;
+                                color::log_color("[SYSTEM]", "Shadow sync finished successfully.", "green");
+                            }
+                            Err(e) => {
+                                eprintln!("[ERR] Shadow sync failed: {}", e);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[ERR] Failed to compute diff stats: {}", e);
+                }
+            }
+
+            let _ = db_conn.execute(
+                "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
+                (
+                    format!("{:?}", event.paths),
+                    status_msg,
+                ),
+            );
         }
     });
 
