@@ -2,16 +2,16 @@
 mod modules {
     // 仓库核心
     pub mod repo {
-        pub mod state;
         pub mod diff;
         pub mod history;
+        pub mod state;
     }
     // 动作指令
     pub mod operations {
         pub mod add;
+        pub mod checkout;
         pub mod commit;
         pub mod push;
-        pub mod checkout;
     }
     // Git 底层
     pub mod git {
@@ -33,11 +33,10 @@ mod modules {
 }
 
 // 2. 引入我们需要的东西
-use notify::{Watcher, RecursiveMode, Event};
+use ignore::gitignore::GitignoreBuilder;
+use notify::{Event, RecursiveMode, Watcher};
 use std::env;
 use tokio::sync::mpsc;
-use ignore::gitignore::GitignoreBuilder;
-
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -68,7 +67,12 @@ async fn main() -> anyhow::Result<()> {
                 // 1. 绝对性能优化的硬编码过滤：
                 // 如果是 .git 内部变动或编译产物，直接拦截，根本不去走正则匹配
                 let path_str = p.to_string_lossy();
-                if path_str.contains(".git") || path_str.contains("target") {
+                if path_str.contains(".git")
+                    || path_str.contains("target")
+                    || path_str.contains(".idea")
+                    || path_str.ends_with('~')  // 重点：匹配以 ~ 结尾的文件
+                    || path_str.contains("__")  // 顺便屏蔽一些可能的临时目录
+                {
                     return true;
                 }
 
@@ -99,7 +103,14 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::spawn(async move {
         while let Some(event) = rx.recv().await {
-            println!("[WARN] detected: {:?}", event.paths);
+            println!("--------------------------------------------------");
+            println!("[EVENT] Real-time mutation: {:?}", event.paths);
+
+            // 调用我们刚写的 DiffEngine
+            match modules::repo::diff::get_stats(".") {
+                Ok(status) => println!("[GIT] Status: {}", status.trim()),
+                Err(e) => eprintln!("[ERR] Failed to compute diff: {}", e),
+            }
         }
     });
 
