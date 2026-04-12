@@ -102,23 +102,23 @@ async fn main() -> anyhow::Result<()> {
 
     watcher.watch(&current_dir, RecursiveMode::Recursive)?;
 
-    println!("[SUCCESS] HumanGit is now visually active.");
+    color::log_color("[SUCCESS]", "HumanGit is now visually active.", "green");
 
     tokio::spawn(async move {
         while let Some(event) = rx.recv().await {
             println!("--------------------------------------------------");
-            println!("[EVENT] Real-time mutation: {:?}", event.paths);
+            color::log_color("[EVENT]", "Real-time mutation: {:?}", event.paths, "yellow");
 
             // 调用我们刚写的 DiffEngine
             match modules::repo::diff::get_stats(".") {
-                Ok(status) => println!("[GIT] Status: {}", status.trim()),
+                Ok(status) => color::log_color("[GIT]", "Status: {}", status.trim(), "cyan"),
                 Err(e) => eprintln!("[ERR] Failed to compute diff: {}", e),
             }
         }
     });
 
     tokio::signal::ctrl_c().await?;
-    println!("[SYSTEM] Shutting down...");
+    color::log_color("[SYSTEM]", "Shutting down...", "green");
 
     Ok(())
 }
