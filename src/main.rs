@@ -107,11 +107,19 @@ async fn main() -> anyhow::Result<()> {
     tokio::spawn(async move {
         while let Some(event) = rx.recv().await {
             println!("--------------------------------------------------");
-            color::log_color("[EVENT]", "Real-time mutation: {:?}", event.paths, "yellow");
+            color::log_color(
+                "[EVENT]",
+                &format!("Real-time mutation: {:?}", event.paths),
+                "yellow"
+            );
 
             // 调用我们刚写的 DiffEngine
             match modules::repo::diff::get_stats(".") {
-                Ok(status) => color::log_color("[GIT]", "Status: {}", status.trim(), "cyan"),
+                Ok(status) => color::log_color(
+                    "[GIT]",
+                    &format!("Status: {}", status.trim()),
+                    "cyan"
+                ),
                 Err(e) => eprintln!("[ERR] Failed to compute diff: {}", e),
             }
         }
