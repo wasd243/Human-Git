@@ -27,18 +27,18 @@ mod modules {
         pub mod errors;
 
         pub mod utils {
-            pub mod utils;
             pub mod color;
+            pub mod utils;
         }
     }
 }
 
 // 2. 引入我们需要的东西
+use crate::modules::shared::utils::color;
 use ignore::gitignore::GitignoreBuilder;
 use notify::{Event, RecursiveMode, Watcher};
 use std::env;
 use tokio::sync::mpsc;
-use crate::modules::shared::utils::color;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -73,8 +73,10 @@ async fn main() -> anyhow::Result<()> {
                 if path_str.contains(".git")
                     || path_str.contains("target")
                     || path_str.contains(".idea")
+                    || path_str.contains("humangit_cache.db")
                     || path_str.ends_with('~')  // 重点：匹配以 ~ 结尾的文件
-                    || path_str.contains("__")  // 顺便屏蔽一些可能的临时目录
+                    || path_str.contains("__")
+                // 顺便屏蔽一些可能的临时目录
                 {
                     return true;
                 }
@@ -105,22 +107,33 @@ async fn main() -> anyhow::Result<()> {
     color::log_color("[SUCCESS]", "HumanGit is now visually active.", "green");
 
     tokio::spawn(async move {
+        let db_conn =
+            rusqlite::Connection::open("humangit_cache.db").expect("无法在线程内打开数据库");
+
         while let Some(event) = rx.recv().await {
             println!("--------------------------------------------------");
             color::log_color(
                 "[EVENT]",
                 &format!("Real-time mutation: {:?}", event.paths),
-                "yellow"
+                "yellow",
             );
 
-            // 调用我们刚写的 DiffEngine
+            // 2. 调用 DiffEngine 获取状态
             match modules::repo::diff::get_stats(".") {
-                Ok(status) => color::log_color(
-                    "[GIT]",
-                    &format!("Status: {}", status.trim()),
-                    "cyan"
-                ),
-                Err(e) => eprintln!("[ERR] Failed to compute diff: {}", e),
+                Ok(status) => {
+                    let status_msg = status.trim();
+                    color::log_color("[GIT]", &format!("Status: {}", status_msg), "cyan");
+
+                    // 3. 【防丢失核心】存入 shadow_history 表
+                    // 使用 {:?} 记录路径数组，使用 status_msg 记录变动统计
+                    let _ = db_conn.execute(
+                        "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
+                        (format!("{:?}", event.paths), status_msg),
+                    );
+                }
+                Err(e) => {
+                    color::log_color("[ERR]", &format!("Failed to compute diff: {}", e), "red");
+                }
             }
         }
     });
