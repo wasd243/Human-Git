@@ -1,0 +1,25 @@
+[package]
+name = "humangit"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# 核心框架
+tauri = { version = "2.1.0", features = ["image-png", "protocol-asset"] }
+tokio = { version = "1", features = ["full"] }
+
+# Git & 文件监听 (换回更稳的版本)
+git2 = "0.19"
+notify = "6.1.1"
+
+# 数据库 (SQLite)
+# 使用 bundled 特性，这样你就不用在 Windows 上折腾安装 sqlite3.dll 了，Rust 会帮你编译进去
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# 序列化与数据处理
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 错误处理神器 (让你少写很多 match)
+anyhow = "1.0"
+thiserror = "1.0"
