@@ -1,9 +1,53 @@
 body {
     margin: 0;
-    font-family: serif; /* 既然要走水墨风，衬线体比无衬线体更有那种感觉 */
-    display: flex;
-    justify-content: center;
-    background-color: rgba(255, 255, 255, 0.7); /* 70% 透明度的白色，像半透明的宣纸 */
+    padding: 0;
+    /* body 仅保留底色和绢本纹理，作为最底层 */
+    background-color: #8D7D49;
+    background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px);
+}
+
+/* 这是真正的画卷层 */
+#千里江山图 {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* 垫在所有内容的下面 */
+
+    background-image:
+        url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg'),
+        url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
+    background-size: auto 100%, auto 100%; /* 两层都按高度撑满 */
+    background-repeat: no-repeat, no-repeat;
+    background-position: 0 center, 0 center; /* 第二层位置由 JS 实时更新 */
+
+    /* 正片叠底，让画卷吃掉底部的绢本质感 */
+    mix-blend-mode: multiply;
+
+    /* 初始暗淡状态 */
+    filter: brightness(0.8) contrast(1.1);
+    /* 给 filter 加上平滑过渡 (移除 background-position 过渡以配合 JS 动画) */
+    transition: filter 3s ease-in-out;
+}
+
+/* 激活时的提亮状态 */
+#千里江山图.engine-active {
+    filter: brightness(1.2) contrast(1.1);
+}
+
+/* 顺手把你那个惨白的日志框变高级一点 */
+#console-output {
+    height: 150px;
+    overflow-y: auto;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    font-size: 0.9rem;
+    /* 改掉纯白背景，换上半透明黑底或者干脆全透明 */
+    background: rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(2px);
+    border-radius: 4px;
 }
 
 #app-container {
@@ -22,16 +66,41 @@ body {
     padding: 20px 0;
 }
 
-.data-node { text-align: center; }
-.value { font-size: 2.5rem; display: block; }
+.data-node {
+    text-align: center;
+}
 
-#console-output {
-    height: 150px;
-    overflow-y: auto;
-    border: 1px solid #eee;
-    padding: 10px;
-    font-size: 0.9rem;
-    background: #fff;
+.value {
+    font-size: 2.5rem;
+    display: block;
+}
+
+
+/* 日志染色样式 */
+.log-system {
+    color: #666;
+    font-style: italic;
+}
+
+.log-err {
+    color: #c00;
+    font-weight: bold;
+}
+
+.log-git {
+    color: #004d40;
+}
+
+.log-success {
+    color: #1b5e20;
+    border-left: 4px solid #4caf50;
+    padding-left: 8px;
+    margin: 4px 0;
+}
+
+.log-event {
+    color: #6a1b9a;
+    border-bottom: 1px solid #eee;
 }
 
 button {
@@ -41,3 +110,33 @@ button {
     background: none;
     cursor: pointer;
 }
+
+/* 在这里修改 */
+/* Splash Banner 样式 */
+#splash-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 180px; /* 稍微缩小高度，更精致 */
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden; /* 裁剪溢出的长卷 */
+    /* 基础显示 */
+    opacity: 1;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#splash-banner img {
+    height: 100%;
+    width: auto; /* 允许图片横向伸展 */
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1); /* 平滑跟随 */
+
+    /* 强化遮罩 */
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0));
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0));
+}
+
+/* --- 动画逻辑由 JS 处理 --- */

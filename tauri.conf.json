@@ -1,11 +1,12 @@
 {
   "productName": "Human-Git",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "identifier": "com.humangit.dev",
   "build": {
-    "beforeDevCommand": "",
-    "beforeBuildCommand": "",
-    "frontendDist": "src/app/desktop"
+    "beforeDevCommand": "npm run dev --prefix src/app/desktop",
+    "beforeBuildCommand": "npm run build --prefix src/app/desktop",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "src/app/desktop/dist"
   },
   "app": {
     "windows": [
