@@ -1,0 +1,7 @@
+{
+  "name": "humangit-monorepo",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "npm run tauri dev --prefix src/app/desktop"
+  }
+}
