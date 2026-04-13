@@ -11,6 +11,9 @@ target/
 .vscode/
 .idea
 
+# junie
+.junie/
+
 # Develop
 node_modules/
 gen/schemas/
