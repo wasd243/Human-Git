@@ -16,10 +16,12 @@ body {
     height: 100vh;
     z-index: -1; /* 垫在所有内容的下面 */
 
-    background-image: url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
-    background-size: auto 100%; /* 重点：高度撑满 100vh，宽度按比例自动伸展 */
-    background-repeat: no-repeat;
-    background-position: 0 center; /* 初始位置：最左侧 */
+    background-image:
+        url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg'),
+        url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
+    background-size: auto 100%, auto 100%; /* 两层都按高度撑满 */
+    background-repeat: no-repeat, no-repeat;
+    background-position: 0 center, 0 center; /* 第二层位置由 JS 实时更新 */
 
     /* 正片叠底，让画卷吃掉底部的绢本质感 */
     mix-blend-mode: multiply;
@@ -73,14 +75,6 @@ body {
     display: block;
 }
 
-#console-output {
-    height: 150px;
-    overflow-y: auto;
-    border: 1px solid #eee;
-    padding: 10px;
-    font-size: 0.9rem;
-    background: #fff;
-}
 
 /* 日志染色样式 */
 .log-system {
