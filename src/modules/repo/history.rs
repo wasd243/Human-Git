@@ -74,6 +74,12 @@ pub fn get_working_status() -> io::Result<Vec<FileStatus>> {
 }
 
 /// 判断是否有未提交改动
+/// 获取还没有 commit 的文件列表
+pub fn get_uncommitted_files() -> io::Result<String> {
+    // 获取 HEAD 的变动文件列表 (包括暂存和未暂存)
+    run_git_command(&["diff", "--name-only", "HEAD"])
+}
+
 pub fn has_changes(files: &Vec<FileStatus>) -> bool {
     !files.is_empty()
 }

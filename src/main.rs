@@ -85,12 +85,10 @@ async fn main() -> anyhow::Result<()> {
                     Err(_) => return,
                 };
 
-                // ================= 新增：解析 .gitignore =================
                 let mut builder = GitignoreBuilder::new(&current_dir);
                 // 加载项目根目录下的 .gitignore
                 builder.add(current_dir.join(".gitignore"));
                 let gitignore = builder.build().expect("Failed to build gitignore parser");
-                // =======================================================
 
                 let (tx, mut rx) = mpsc::channel::<Event>(100);
 
@@ -135,6 +133,19 @@ async fn main() -> anyhow::Result<()> {
 
                 log_color("[SUCCESS]", "HumanGit is now visually active.", "green");
 
+                // --- 新增：初始化时打印提交历史 ---
+                match modules::repo::history::get_commit_history() {
+                    Ok(commits) => {
+                        log_raw("--------------------------------------------------");
+                        log_color("[GIT]", "Recent Commit History:", "cyan");
+                        for commit in commits.iter().take(5) { // 仅展示前 5 条以保持清晰
+                            log_raw(&format!("  [{}] {} (Parents: {})", commit.hash, commit.message, commit.parents.join(", ")));
+                        }
+                    }
+                    Err(e) => log_color("[ERR]", &format!("Failed to get history: {}", e), "red"),
+                }
+                // ------------------------------------
+
                 let db_conn = rusqlite::Connection::open("humangit_cache.db").expect("Could Not Open!");
                 let debounce_duration = std::time::Duration::from_millis(500);
 
@@ -173,6 +184,32 @@ async fn main() -> anyhow::Result<()> {
                     if !status_msg.is_empty() {
                         log_color("[GIT]", &format!("Status:\n{}", status_msg), "cyan");
                     }
+
+                    // --- 新增：使用 history.rs 的函数获取状态并打印返回值 ---
+                    match modules::repo::history::get_working_status() {
+                        Ok(statuses) => {
+                            let has_changes = modules::repo::history::has_changes(&statuses);
+                            log_color("[REPO]", &format!("Has changes: {}", has_changes), "magenta");
+                            for status in statuses {
+                                log_raw(&format!("  [{} {}] {}", status.x, status.y, status.path));
+                            }
+                            
+                            // --- 新增：打印变动的文件名 ---
+                            if has_changes {
+                                if let Ok(files) = modules::repo::history::get_uncommitted_files() {
+                                    if !files.is_empty() {
+                                        log_color("[FILES]", "Uncommitted changed files:", "yellow");
+                                        for file in files.lines() {
+                                            log_raw(&format!("    {}", file));
+                                        }
+                                    }
+                                }
+                            }
+                            // -------------------------
+                        }
+                        Err(e) => log_color("[ERR]", &format!("Failed to get working status: {}", e), "red"),
+                    }
+                    // -----------------------------------------------------
 
                     match modules::repo::diff::get_stats(".") {
                         Ok(stats) => {
