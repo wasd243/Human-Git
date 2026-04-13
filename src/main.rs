@@ -197,16 +197,16 @@ async fn main() -> anyhow::Result<()> {
                         "yellow",
                     );
 
-                    let raw_status = match std::process::Command::new("git")
-                        .arg("status")
-                        .arg("--short")
-                        .output()
-                        {
-                            Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
-                            Err(_) => String::new(),
-                        };
-
-                    let status_msg = raw_status.trim();
+                    let status_msg = match modules::repo::history::get_working_status() {
+                        Ok(statuses) => {
+                            let mut msg = String::new();
+                            for status in statuses {
+                                msg.push_str(&format!("{}{} {}\n", status.x, status.y, status.path));
+                            }
+                            msg.trim().to_string()
+                        }
+                        Err(_) => String::new(),
+                    };
                     if !status_msg.is_empty() {
                         log_color("[GIT]", &format!("Status:\n{}", status_msg), "cyan");
                     }
