@@ -28,7 +28,6 @@ listen<string>("log-event", (event) => {
 });
 
 // 1. 监听 Rust 侧的变动广播
-// 假设你在 Rust 里的代码变动处写了：app_handle.emit("git-mutation", payload)
 listen<MutationPayload>("git-mutation", (event) => {
     const { insertions, deletions } = event.payload;
     insEl.textContent = insertions.toString();
