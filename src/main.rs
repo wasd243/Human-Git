@@ -144,6 +144,32 @@ async fn main() -> anyhow::Result<()> {
                     }
                     Err(e) => log_color("[ERR]", &format!("Failed to get history: {}", e), "red"),
                 }
+
+                // --- 新增：初始化时检查未提交更改 ---
+                match modules::repo::history::get_working_status() {
+                    Ok(statuses) => {
+                        let has_changes = modules::repo::history::has_changes(&statuses);
+                        if has_changes {
+                            log_raw("--------------------------------------------------");
+                            log_color("[REPO]", &format!("Current Working Status (Has changes: {})", has_changes), "magenta");
+                            for status in statuses {
+                                log_raw(&format!("  [{} {}] {}", status.x, status.y, status.path));
+                            }
+
+                            if let Ok(files) = modules::repo::history::get_uncommitted_files() {
+                                if !files.is_empty() {
+                                    log_color("[FILES]", "Uncommitted changed files at startup:", "yellow");
+                                    for file in files.lines() {
+                                        log_raw(&format!("    {}", file));
+                                    }
+                                }
+                            }
+                        } else {
+                            log_color("[REPO]", "Clean workspace: No uncommitted changes.", "green");
+                        }
+                    }
+                    Err(e) => log_color("[ERR]", &format!("Failed to get working status: {}", e), "red"),
+                }
                 // ------------------------------------
 
                 let db_conn = rusqlite::Connection::open("humangit_cache.db").expect("Could Not Open!");
