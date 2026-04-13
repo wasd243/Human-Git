@@ -1,0 +1,43 @@
+body {
+    margin: 0;
+    font-family: serif; /* 既然要走水墨风，衬线体比无衬线体更有那种感觉 */
+    display: flex;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.7); /* 70% 透明度的白色，像半透明的宣纸 */
+}
+
+#app-container {
+    width: 90vw;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+}
+
+.monitor-panel {
+    display: flex;
+    justify-content: space-around;
+    border: 1px solid #ccc; /* 基础线框 */
+    padding: 20px 0;
+}
+
+.data-node { text-align: center; }
+.value { font-size: 2.5rem; display: block; }
+
+#console-output {
+    height: 150px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    padding: 10px;
+    font-size: 0.9rem;
+    background: #fff;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #000;
+    background: none;
+    cursor: pointer;
+}
