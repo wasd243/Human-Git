@@ -3,7 +3,7 @@ body {
     font-family: serif; /* 既然要走水墨风，衬线体比无衬线体更有那种感觉 */
     display: flex;
     justify-content: center;
-    background-color: rgba(255, 255, 255, 0.7); /* 70% 透明度的白色，像半透明的宣纸 */
+    background-color: rgba(255, 255, 255, 0.78); /* 70% 透明度的白色，像半透明的宣纸 */
 }
 
 #app-container {

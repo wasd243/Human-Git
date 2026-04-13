@@ -1,6 +1,6 @@
 {
   "productName": "Human-Git",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "identifier": "com.humangit.dev",
   "build": {
     "beforeDevCommand": "npm run dev --prefix src/app/desktop",
