@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>Humangit</title>
+</head>
+<body>
+<main id="app-container">
+    <header>
+        <div id="connection-status"></div>
+        <h1>Human-Git <small>v0.0.2</small></h1>
+    </header>
+
+    <div class="monitor-panel">
+        <div class="data-node">
+            <span class="label">INS</span>
+            <span id="ins-value" class="value">0</span>
+        </div>
+        <div class="data-node">
+            <span class="label">DEL</span>
+            <span id="del-value" class="value">0</span>
+        </div>
+    </div>
+
+    <div id="console-output"></div>
+
+    <nav class="controls">
+        <button id="btn-sync">SHADOW SYNC</button>
+    </nav>
+</main>
+
+<script type="module" src="gui.ts"></script>
+</body>
+</html>
