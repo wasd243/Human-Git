@@ -53,7 +53,9 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
 
     // 4) 把刚才存的东西“复印”一份到影子分支
     if stashed {
-        let _ = repo.stash_apply(0, None);
+        if let Err(e) = repo.stash_apply(0, None) {
+            eprintln!("[ERR] Failed to apply stash to shadow branch: {}", e);
+        }
     }
     
     {
@@ -88,10 +90,9 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
 
     // 7) 恢复 IDE 的彩色标记：把 stash pop 出来
     if stashed {
-        if let Ok(_) = repo.stash_pop(0, None) {
-            eprintln!("[SUCCESS] Shadow checkpoint created. IDE markers preserved.");
-        } else {
-            eprintln!("[SUCCESS] Shadow checkpoint created but stash pop failed.");
+        match repo.stash_pop(0, None) {
+            Ok(_) => eprintln!("[SUCCESS] Shadow checkpoint created. IDE markers preserved."),
+            Err(e) => eprintln!("[ERR] Shadow checkpoint created but stash pop failed: {}", e),
         }
     } else {
         eprintln!("[SUCCESS] Shadow checkpoint created. IDE markers preserved.");
