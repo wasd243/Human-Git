@@ -133,9 +133,8 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                         Err(_) => path.as_path(),
                     };
 
-                    match gitignore.matched_path_or_any_parents(rel_path, false) {
-                        ignore::Match::Ignore(_) => continue,
-                        _ => {},
+                    if let ignore::Match::Ignore(_) = gitignore.matched_path_or_any_parents(rel_path, false) {
+                        continue;
                     }
                     
                     // Ignore non-essential metadata changes

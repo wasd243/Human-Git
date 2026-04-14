@@ -1,5 +1,5 @@
 use git2::{Repository, StatusOptions, Sort};
-use std::io::{self, Error, ErrorKind};
+use std::io::{self, Error};
 
 #[derive(Debug)]
 pub struct Commit {
@@ -16,22 +16,20 @@ pub struct FileStatus {
 }
 
 pub fn get_commit_history() -> io::Result<Vec<Commit>> {
-    let repo = Repository::discover(".").map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
-    let mut revwalk = repo.revwalk().map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
-    revwalk.set_sorting(Sort::TIME).map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+    let repo = Repository::discover(".").map_err(|e| Error::other(e.to_string()))?;
+    let mut revwalk = repo.revwalk().map_err(|e| Error::other(e.to_string()))?;
+    revwalk.set_sorting(Sort::TIME).map_err(|e| Error::other(e.to_string()))?;
     if revwalk.push_head().is_err() {
         return Ok(Vec::new());
     }
 
     let mut commits = Vec::new();
-    for oid_res in revwalk.take(100) {
-        if let Ok(oid) = oid_res {
-            if let Ok(commit) = repo.find_commit(oid) {
-                let hash = commit.id().to_string().chars().take(7).collect::<String>();
-                let parents = commit.parent_ids().map(|id| id.to_string().chars().take(7).collect::<String>()).collect();
-                let message = commit.summary().unwrap_or("").to_string();
-                commits.push(Commit { hash, parents, message });
-            }
+    for oid in revwalk.take(100).flatten() {
+        if let Ok(commit) = repo.find_commit(oid) {
+            let hash = commit.id().to_string().chars().take(7).collect::<String>();
+            let parents = commit.parent_ids().map(|id| id.to_string().chars().take(7).collect::<String>()).collect();
+            let message = commit.summary().unwrap_or("").to_string();
+            commits.push(Commit { hash, parents, message });
         }
     }
     
@@ -39,10 +37,10 @@ pub fn get_commit_history() -> io::Result<Vec<Commit>> {
 }
 
 pub fn get_working_status() -> io::Result<Vec<FileStatus>> {
-    let repo = Repository::discover(".").map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+    let repo = Repository::discover(".").map_err(|e| Error::other(e.to_string()))?;
     let mut opts = StatusOptions::new();
     opts.include_untracked(true).recurse_untracked_dirs(true);
-    let statuses_repo = repo.statuses(Some(&mut opts)).map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+    let statuses_repo = repo.statuses(Some(&mut opts)).map_err(|e| Error::other(e.to_string()))?;
 
     let mut statuses = Vec::new();
     for entry in statuses_repo.iter() {
@@ -81,6 +79,6 @@ pub fn get_uncommitted_files() -> io::Result<String> {
     Ok(files.join("\n"))
 }
 
-pub fn has_changes(files: &Vec<FileStatus>) -> bool {
+pub fn has_changes(files: &[FileStatus]) -> bool {
     !files.is_empty()
 }
