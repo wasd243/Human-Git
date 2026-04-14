@@ -1,12 +1,12 @@
-﻿// 1. 声明顶级模块
+﻿// 1. Declare top-level modules
 pub mod modules {
-    // 仓库核心
+    // Repository core
     pub mod repo {
         pub mod diff;
         pub mod history;
         pub mod state;
     }
-    // 动作指令
+    // Action commands
     pub mod operations {
         pub mod add;
         pub mod checkout;
@@ -14,16 +14,16 @@ pub mod modules {
         pub mod push;
         pub mod run_shadow_sync;
     }
-    // Git 底层
+    // Git core
     pub mod git {
         pub mod executor;
         pub mod porcelain;
     }
-    // 通讯桥梁
+    // Communication bridge
     pub mod ui_bridge {
         pub mod handlers;
     }
-    // 共享工具
+    // Shared utilities
     pub mod shared {
         pub mod errors;
 
@@ -35,7 +35,7 @@ pub mod modules {
     pub mod watcher;
 }
 
-// 2. 引入我们需要的东西
+// 2. Import required dependencies
 use crate::modules::ui_bridge::handlers;
 use std::sync::Arc;
 use r2d2::Pool;

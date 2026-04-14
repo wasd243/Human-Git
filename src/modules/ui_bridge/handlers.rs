@@ -10,7 +10,7 @@ pub struct MutationPayload {
 
 #[tauri::command]
 pub async fn run_shadow_sync(repo_path: String) -> Result<(), String> {
-    // 调用现有的同步逻辑
+    // Call the existing sync logic
     executor::run_shadow_sync(&repo_path).map_err(|e| e.to_string())
 }
 

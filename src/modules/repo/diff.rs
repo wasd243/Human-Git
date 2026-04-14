@@ -16,7 +16,7 @@ pub fn get_stats(repo_path: &str) -> anyhow::Result<DiffStats> {
     let diff = repo.diff_tree_to_workdir_with_index(Some(&head), Some(&mut opts))?;
     let stats = diff.stats()?;
 
-    // 优雅，太优雅了！直接调用原生 API，不用去切字符串了。
+    // Elegant, very elegant! Call native API directly, no need to parse strings.
     Ok(DiffStats {
         insertions: stats.insertions() as i32,
         deletions: stats.deletions() as i32,
