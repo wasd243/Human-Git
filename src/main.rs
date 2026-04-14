@@ -63,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
     let app_state = AppState {
         total_lines: Arc::new(Mutex::new((0, 0))),
         last_sync_count: Arc::new(Mutex::new(0)),
-        db_conn: db_conn,
+        db_conn,
         ignore_events_until: Arc::new(Mutex::new(Instant::now())),
     };
 
