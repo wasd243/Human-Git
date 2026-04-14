@@ -163,11 +163,15 @@ button {
     background: rgba(0, 0, 0, 0.8);
 }
 
+:root {
+    --panel-width: min(80vw, 300px);
+}
+
 #another-ui-panel {
     position: fixed;
     top: 0;
-    left: -350px;
-    width: 300px;
+    left: calc(var(--panel-width) * -1 - 50px);
+    width: var(--panel-width);
     height: 100vh;
     z-index: 999;
     /* Use CSS default body */
