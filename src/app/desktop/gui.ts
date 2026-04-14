@@ -156,7 +156,7 @@ printLog("[HumanGit] Engine Online.");
 // --- UI Additions for SHADOW_SYNC ---
 const triggerBtn = document.createElement("button");
 triggerBtn.id = "top-left-sync-btn";
-triggerBtn.innerHTML = `<span class="sync-icon"></span>Utilities`;
+triggerBtn.innerHTML = `<span class="gear-icon">⚙</span>`;
 document.body.appendChild(triggerBtn);
 
 const leftUI = document.createElement("div");
