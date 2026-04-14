@@ -69,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
 
     tauri::Builder::default()
         .manage(app_state)
-        .invoke_handler(tauri::generate_handler![handlers::run_shadow_sync])
+        .invoke_handler(tauri::generate_handler![handlers::run_shadow_sync, handlers::get_initial_stats])
         .setup(|app| {
             let app_handle = app.handle().clone();
 

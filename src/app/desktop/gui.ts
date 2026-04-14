@@ -130,6 +130,14 @@ listen<MutationPayload>("git-mutation", (event) => {
     printLog(`Detected movement: +${insertions} / -${deletions}`);
 });
 
+// 1.5 Fetch initial stats right after UI loads
+invoke<MutationPayload>("get_initial_stats").then((payload) => {
+    insEl.textContent = payload.insertions.toString();
+    delEl.textContent = payload.deletions.toString();
+}).catch((e) => {
+    printLog(`[ERR] Failed to fetch initial stats: ${e}`);
+});
+
 // 2. 按钮点击触发手动同步
 syncBtn.addEventListener("click", async () => {
     printLog("Connecting to shadow dimension...");
