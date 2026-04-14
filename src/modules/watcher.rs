@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
 use crate::AppState;
+use anyhow::Context;
 
 pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
     let log_raw = |msg: &str| {
@@ -33,7 +34,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
 
     let mut builder = GitignoreBuilder::new(&current_dir);
     builder.add(current_dir.join(".gitignore"));
-    let gitignore = builder.build().expect("Failed to build gitignore parser");
+    let gitignore = builder.build().context("Failed to build gitignore parser")?;
 
     match history::get_commit_history() {
         Ok(commits) => {
@@ -78,11 +79,11 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
         move |res: DebounceEventResult| {
             let _ = tx.blocking_send(res);
         },
-    ).expect("Watcher failed");
+    ).context("Watcher failed")?;
 
     debouncer.watcher()
         .watch(&current_dir, RecursiveMode::Recursive)
-        .expect("Watch failed");
+        .context("Watch failed")?;
 
     log_color_fn("[SUCCESS]", "HumanGit is now visually active.", "green");
 

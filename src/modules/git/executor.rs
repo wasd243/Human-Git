@@ -46,7 +46,7 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     let shadow_ref_name = {
         let commit = repo.head()?.peel_to_commit()?;
         let shadow_branch = repo.branch("humangit-shadow", &commit, true)?;
-        shadow_branch.get().name().unwrap().to_string()
+        shadow_branch.get().name().context("Failed to get shadow branch name")?.to_string()
     };
     repo.set_head(&shadow_ref_name)?;
     repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
