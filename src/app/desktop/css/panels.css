@@ -1,0 +1,81 @@
+:root {
+    --panel-width: min(80vw, 300px);
+}
+
+.monitor-panel {
+    display: flex;
+    justify-content: space-around;
+    border: 1px solid #ccc; /* 基础线框 */
+    padding: 20px 0;
+}
+
+.data-node {
+    text-align: center;
+}
+
+.value {
+    font-size: 2.5rem;
+    display: block;
+}
+
+#left-ui {
+    position: fixed;
+    top: 0;
+    left: calc(var(--panel-width) * -1 - 50px);
+    width: var(--panel-width);
+    height: 100vh;
+    z-index: 999;
+
+    background-color: rgba(255, 255, 255, 0.1);
+    /* 极致磨砂：模糊度不宜过大，8-12px 最佳 */
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(10px);
+    /* 使用带透明度的白色，营造一种光线在边缘折射的质感 */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* 细节微调：让边框在深色山水背景下更精致 */
+    border-radius: 4px; /* 极小的圆角，或者 0 像素保持硬朗 */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); /* 极轻的阴影，增加浮空感 */
+
+    transition: left 0.4s ease-in-out;
+    padding: 80px 20px 20px 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+#left-ui.show {
+    left: 0;
+}
+
+.top-slide-ui {
+    position: fixed;
+    top: -100%;
+    left: 0;
+    width: 100vw;
+    height: 160px;
+    z-index: 999;
+
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    transition: top 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.top-slide-ui.show {
+    top: 0;
+}
+
+.top-slide-ui .monitor-panel {
+    width: 90vw;
+    max-width: 600px;
+    border: none;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}

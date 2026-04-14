@@ -1,5 +1,7 @@
 import {invoke} from "@tauri-apps/api/core";
 import {listen} from "@tauri-apps/api/event";
+import "/css/components.css";
+import "/css/panels.css";
 
 // 定义一个简单的结构体，对应 Rust 发过来的数据
 interface MutationPayload {
