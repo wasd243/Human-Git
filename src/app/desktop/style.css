@@ -16,9 +16,8 @@ body {
     height: 100vh;
     z-index: -1; /* 垫在所有内容的下面 */
 
-    background-image:
-        url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg'),
-        url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
+    background-image: url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg'),
+    url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
     background-size: auto 100%, auto 100%; /* 两层都按高度撑满 */
     background-repeat: no-repeat, no-repeat;
     background-position: 0 center, 0 center; /* 第二层位置由 JS 实时更新 */
@@ -106,9 +105,16 @@ body {
 button {
     width: 100%;
     padding: 15px;
-    border: 1px solid #000;
-    background: none;
+    /* 极致磨砂：模糊度不宜过大，8-12px 最佳 */
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(10px);
+    /* 使用带透明度的白色，营造一种光线在边缘折射的质感 */
+    border: 1px solid rgb(227 74 57);
+    /* 细节微调：让边框在深色山水背景下更精致 */
+    border-radius: 4px; /* 极小的圆角，或者 0 像素保持硬朗 */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); /* 极轻的阴影，增加浮空感 */
     cursor: pointer;
+    background:none;
 }
 
 /* 在这里修改 */
@@ -142,43 +148,60 @@ button {
 /* --- 动画逻辑由 JS 处理 --- */
 
 
-/* --- New UI Styles --- */
+/* --- 朱砂红 --- */
 #top-left-sync-btn {
     position: fixed;
     top: 20px;
     left: 20px;
     width: auto;
+    border: none !important;
     padding: 10px 20px;
     z-index: 1000;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #E34A39;
     border-radius: 4px;
     cursor: pointer;
     transition: transform 0.3s ease, background 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
+
+#top-left-sync-btn .sync-icon {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #E34A39;
+    border-radius: 50%;
+}
+
 
 #top-left-sync-btn:hover {
     transform: scale(1.05);
-    background: rgba(0, 0, 0, 0.8);
+    background: rgb(23 22 22 / 0.8);
 }
 
 :root {
     --panel-width: min(80vw, 300px);
 }
 
-#another-ui-panel {
+#left-ui {
     position: fixed;
     top: 0;
     left: calc(var(--panel-width) * -1 - 50px);
     width: var(--panel-width);
     height: 100vh;
     z-index: 999;
-    /* Use CSS default body */
-    background-color: #8D7D49;
-    background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px);
-    box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+
+    background-color: rgba(255, 255, 255, 0.1);
+    /* 极致磨砂：模糊度不宜过大，8-12px 最佳 */
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(10px);
+    /* 使用带透明度的白色，营造一种光线在边缘折射的质感 */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* 细节微调：让边框在深色山水背景下更精致 */
+    border-radius: 4px; /* 极小的圆角，或者 0 像素保持硬朗 */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); /* 极轻的阴影，增加浮空感 */
+
     transition: left 0.4s ease-in-out;
     padding: 80px 20px 20px 20px;
     box-sizing: border-box;
@@ -186,6 +209,6 @@ button {
     flex-direction: column;
 }
 
-#another-ui-panel.show {
+#left-ui.show {
     left: 0;
 }
