@@ -34,6 +34,28 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
 
     let mut builder = GitignoreBuilder::new(&current_dir);
     builder.add(current_dir.join(".gitignore"));
+
+    let default_ignores = [
+        ".git",
+        ".git/*",
+        "target",
+        "target/*",
+        ".idea",
+        ".idea/*",
+        "humangit_cache.db*",
+        "*~",
+        "*.swp",
+        "*.tmp",
+        ".DS_Store",
+        "Thumbs.db",
+        "__pycache__",
+        "*.pyc",
+    ];
+
+    for glob in default_ignores {
+        let _ = builder.add_line(None, glob);
+    }
+
     let gitignore = builder.build().context("Failed to build gitignore parser")?;
 
     match history::get_commit_history() {
@@ -105,17 +127,6 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                 let mut mutated_paths = Vec::new();
                 for event in events {
                     let path = event.path;
-                    let path_str = path.to_string_lossy();
-                    
-                    if path_str.contains(".git")
-                        || path_str.contains("target")
-                        || path_str.contains(".idea")
-                        || path_str.contains("humangit_cache.db")
-                        || path_str.ends_with('~')
-                        || path_str.contains("__")
-                    {
-                        continue;
-                    }
 
                     let rel_path = match path.strip_prefix(&watcher_dir) {
                         Ok(relative) => relative,
