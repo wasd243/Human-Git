@@ -170,3 +170,18 @@ leftUI.appendChild(syncBtn);
 triggerBtn.addEventListener("click", () => {
     leftUI.classList.toggle("show");
 });
+
+// --- UI Additions for Show Changes ---
+const btnShowChanges = document.getElementById("btn-show-changes")!;
+const topUI = document.getElementById("top-ui")!;
+const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
+
+btnShowChanges.addEventListener("click", () => {
+    topUI.classList.add("show");
+    btnShowChanges.style.display = "none";
+});
+
+btnCloseTopUI.addEventListener("click", () => {
+    topUI.classList.remove("show");
+    btnShowChanges.style.display = "";
+});

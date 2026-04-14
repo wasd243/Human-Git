@@ -16,8 +16,8 @@ body {
     height: 100vh;
     z-index: -1; /* 垫在所有内容的下面 */
 
-    background-image: url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg'),
-    url('assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
+    background-image: url('../assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg'),
+    url('../assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
     background-size: auto 100%, auto 100%; /* 两层都按高度撑满 */
     background-repeat: no-repeat, no-repeat;
     background-position: 0 center, 0 center; /* 第二层位置由 JS 实时更新 */
@@ -231,4 +231,96 @@ button {
 
 #left-ui.show {
     left: 0;
+}
+
+.human-git-main-btn {
+  /* 形状：宽而扁的圆头 */
+  width: 420px;
+  height: 48px;
+  border-radius: 24px; /* 高度的一半 */
+  
+  /* 材质：极致磨砂 */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px) saturate(120%);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  
+  /* 文字：居中，带点间距 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: rgba(242, 234, 218, 0.9); /* 绢本白 */
+  font-family: 'Inter', sans-serif; /* 或者是你选的等宽字体 */
+  letter-spacing: 0.2em;
+  font-size: 13px;
+  
+  /* 动效 */
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  margin: 0 auto; /* Center it */
+}
+
+.human-git-main-btn:hover {
+  width: 450px; /* 稍微伸长，像拉开卷轴 */
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.3em;
+}
+
+.top-slide-ui {
+    position: fixed;
+    top: -100%;
+    left: 0;
+    width: 100vw;
+    height: 160px;
+    z-index: 999;
+
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    transition: top 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.top-slide-ui.show {
+    top: 0;
+}
+
+.top-slide-ui .monitor-panel {
+    width: 90vw;
+    max-width: 600px;
+    border: none;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: rgba(242, 234, 218, 0.9);
+    font-size: 24px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    width: auto;
+    padding: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.close-btn:hover {
+    transform: scale(1.2);
+    background: none;
+    border: none;
+    box-shadow: none;
 }

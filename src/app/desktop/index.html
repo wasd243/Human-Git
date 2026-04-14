@@ -2,13 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     <title>HumanGit</title>
 </head>
 <body>
 <div id="千里江山图"></div>
 <main id="app-container">
 
+    <button id="btn-show-changes" class="human-git-main-btn">Show Changes</button>
+
+    <div id="console-output"></div>
+
+    <nav class="controls">
+        <button id="btn-sync">SHADOW SYNC</button>
+    </nav>
+</main>
+
+<div id="top-ui" class="top-slide-ui">
+    <button id="btn-close-top-ui" class="close-btn">✕</button>
     <div class="monitor-panel">
         <div class="data-node">
             <span class="label">INS</span>
@@ -19,13 +30,7 @@
             <span id="del-value" class="value">0</span>
         </div>
     </div>
-
-    <div id="console-output"></div>
-
-    <nav class="controls">
-        <button id="btn-sync">SHADOW SYNC</button>
-    </nav>
-</main>
+</div>
 
 <script type="module" src="gui.ts"></script>
 </body>
