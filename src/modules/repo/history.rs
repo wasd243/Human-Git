@@ -1,5 +1,5 @@
-use std::process::Command;
-use std::io::{self, Error, ErrorKind};
+use git2::{Repository, StatusOptions, Sort};
+use std::io::{self, Error};
 
 #[derive(Debug)]
 pub struct Commit {
@@ -15,65 +15,70 @@ pub struct FileStatus {
     pub path: String,
 }
 
-/// 执行 Git 命令并获取输出字符串
-fn run_git_command(args: &[&str]) -> io::Result<String> {
-    let output = Command::new("git")
-        .args(args)
-        .output()?;
-
-    if !output.status.success() {
-        let err_msg = String::from_utf8_lossy(&output.stderr);
-        return Err(Error::new(ErrorKind::Other, err_msg.trim()));
+pub fn get_commit_history() -> io::Result<Vec<Commit>> {
+    let repo = Repository::discover(".").map_err(|e| Error::other(e.to_string()))?;
+    let mut revwalk = repo.revwalk().map_err(|e| Error::other(e.to_string()))?;
+    revwalk.set_sorting(Sort::TIME).map_err(|e| Error::other(e.to_string()))?;
+    if revwalk.push_head().is_err() {
+        return Ok(Vec::new());
     }
 
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
-}
-
-/// 获取 commit 历史
-pub fn get_commit_history() -> io::Result<Vec<Commit>> {
-    let output = run_git_command(&["log", "--pretty=format:%h|%p|%s", "-n", "100"])?;
-    
     let mut commits = Vec::new();
-    for line in output.lines() {
-        if line.is_empty() { continue; }
-        
-        let parts: Vec<&str> = line.splitn(3, '|').collect();
-        if parts.len() < 3 { continue; }
-
-        let hash = parts[0].to_string();
-        let parents = if parts[1].is_empty() {
-            Vec::new()
-        } else {
-            parts[1].split_whitespace().map(|s| s.to_string()).collect()
-        };
-        let message = parts[2].to_string();
-
-        commits.push(Commit { hash, parents, message });
+    for oid in revwalk.take(100).flatten() {
+        if let Ok(commit) = repo.find_commit(oid) {
+            let hash = commit.id().to_string().chars().take(7).collect::<String>();
+            let parents = commit.parent_ids().map(|id| id.to_string().chars().take(7).collect::<String>()).collect();
+            let message = commit.summary().unwrap_or("").to_string();
+            commits.push(Commit { hash, parents, message });
+        }
     }
     
     Ok(commits)
 }
 
-/// 获取当前工作区状态
 pub fn get_working_status() -> io::Result<Vec<FileStatus>> {
-    let output = run_git_command(&["status", "--porcelain"])?;
-    
+    let repo = Repository::discover(".").map_err(|e| Error::other(e.to_string()))?;
+    let mut opts = StatusOptions::new();
+    opts.include_untracked(true).recurse_untracked_dirs(true);
+    let statuses_repo = repo.statuses(Some(&mut opts)).map_err(|e| Error::other(e.to_string()))?;
+
     let mut statuses = Vec::new();
-    for line in output.lines() {
-        if line.len() < 4 { continue; }
-
-        let bytes = line.as_bytes();
-        let x = bytes[0] as char;
-        let y = bytes[1] as char;
-        let path = line[3..].to_string();
-
+    for entry in statuses_repo.iter() {
+        let status = entry.status();
+        let path = entry.path().unwrap_or("").to_string();
+        
+        let mut x = ' ';
+        let mut y = ' ';
+        
+        if status.contains(git2::Status::INDEX_NEW) { x = 'A'; }
+        else if status.contains(git2::Status::INDEX_MODIFIED) { x = 'M'; }
+        else if status.contains(git2::Status::INDEX_DELETED) { x = 'D'; }
+        else if status.contains(git2::Status::INDEX_RENAMED) { x = 'R'; }
+        else if status.contains(git2::Status::INDEX_TYPECHANGE) { x = 'T'; }
+        
+        if status.contains(git2::Status::WT_NEW) { y = '?'; x = '?'; }
+        else if status.contains(git2::Status::WT_MODIFIED) { y = 'M'; }
+        else if status.contains(git2::Status::WT_DELETED) { y = 'D'; }
+        else if status.contains(git2::Status::WT_RENAMED) { y = 'R'; }
+        else if status.contains(git2::Status::WT_TYPECHANGE) { y = 'T'; }
+        
+        if x == ' ' && y == ' ' { continue; }
+        
         statuses.push(FileStatus { x, y, path });
     }
     
     Ok(statuses)
 }
 
-/// 判断是否有未提交改动
-pub fn has_changes(files: &Vec<FileStatus>) -> bool {
+pub fn get_uncommitted_files() -> io::Result<String> {
+    let statuses = get_working_status()?;
+    let mut files = Vec::new();
+    for status in statuses {
+        files.push(status.path);
+    }
+    Ok(files.join("\n"))
+}
+
+pub fn has_changes(files: &[FileStatus]) -> bool {
     !files.is_empty()
 }

@@ -140,3 +140,52 @@ button {
 }
 
 /* --- 动画逻辑由 JS 处理 --- */
+
+
+/* --- New UI Styles --- */
+#top-left-sync-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: auto;
+    padding: 10px 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+#top-left-sync-btn:hover {
+    transform: scale(1.05);
+    background: rgba(0, 0, 0, 0.8);
+}
+
+:root {
+    --panel-width: min(80vw, 300px);
+}
+
+#another-ui-panel {
+    position: fixed;
+    top: 0;
+    left: calc(var(--panel-width) * -1 - 50px);
+    width: var(--panel-width);
+    height: 100vh;
+    z-index: 999;
+    /* Use CSS default body */
+    background-color: #8D7D49;
+    background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px);
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    transition: left 0.4s ease-in-out;
+    padding: 80px 20px 20px 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+#another-ui-panel.show {
+    left: 0;
+}

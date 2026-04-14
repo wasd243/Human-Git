@@ -1,3 +1,5 @@
+PRAGMA journal_mode = WAL;
+
 -- HumanGit 基础缓存表
 CREATE TABLE IF NOT EXISTS commits_cache
 (

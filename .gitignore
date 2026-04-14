@@ -30,3 +30,9 @@ src-tauri/icons/ios/
 Thumbs.db
 .aider*
 *.db
+# 忽略所有 SQLite 缓存和日志文件
+*.db-shm
+*.db-wal
+*.db-journal
+humangit_cache.db-shm
+humangit_cache.db-wal

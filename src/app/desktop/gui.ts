@@ -143,3 +143,22 @@ syncBtn.addEventListener("click", async () => {
 });
 
 printLog("[HumanGit] Engine Online.");
+
+
+// --- UI Additions for SHADOW_SYNC ---
+const triggerBtn = document.createElement("button");
+triggerBtn.id = "top-left-sync-btn";
+triggerBtn.textContent = "SHADOW SYNC";
+document.body.appendChild(triggerBtn);
+
+const anotherUI = document.createElement("div");
+anotherUI.id = "another-ui-panel";
+document.body.appendChild(anotherUI);
+
+// Move the original sync button into the new UI
+anotherUI.appendChild(syncBtn);
+
+// Interactions
+triggerBtn.addEventListener("click", () => {
+    anotherUI.classList.toggle("show");
+});
