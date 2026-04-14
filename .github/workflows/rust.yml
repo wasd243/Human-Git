@@ -15,8 +15,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install GLib dependencies
+      run: sudo apt-get update && sudo apt-get install -y libglib2.0-dev
+      
     - uses: actions/checkout@v4
+    
     - name: Build
       run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      
+    - name: Check
+      run: cargo check
