@@ -1,4 +1,4 @@
-name: Rust
+name: Rust CI
 
 on:
   push:
@@ -11,13 +11,28 @@ env:
 
 jobs:
   build:
-
+    name: Check and Build
     runs-on: windows-latest
 
     steps:
-    # Don't needs to use sudo
-    - name: Build
-      run: cargo build --verbose
-      
-    - name: Check
-      run: cargo check
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # 这样会把代码直接放在根目录，解决你刚才看到的路径重复问题
+          path: .
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        # 这一步非常重要！它会缓存你的依赖。
+        # 下次运行 CI 时，不用重新下载编译那堆 sys 库，速度快 5-10 倍。
+
+      - name: Cargo Check
+        run: cargo check --all-targets --all-features
+        
+      - name: Cargo Build
+        run: cargo build --verbose
