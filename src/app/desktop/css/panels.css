@@ -47,12 +47,12 @@
     left: 0;
 }
 
-.top-slide-ui {
+.top-ui {
     position: fixed;
     top: -100%;
     left: 0;
     width: 100vw;
-    height: 160px;
+    height: 100vh;
     z-index: 999;
 
     background-color: rgba(255, 255, 255, 0.1);
@@ -68,11 +68,11 @@
     align-items: center;
 }
 
-.top-slide-ui.show {
+.top-ui.show {
     top: 0;
 }
 
-.top-slide-ui .monitor-panel {
+.top-ui .monitor-panel {
     width: 90vw;
     max-width: 600px;
     border: none;

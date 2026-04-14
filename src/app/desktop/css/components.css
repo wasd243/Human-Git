@@ -123,3 +123,11 @@ button {
 #top-left-sync-btn:hover .gear-icon {
     transform: rotate(180deg) scale(1.1);
 }
+
+#btn-show-changes {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+}
