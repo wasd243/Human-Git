@@ -38,14 +38,15 @@ pub mod modules {
 // 2. 引入我们需要的东西
 use crate::modules::ui_bridge::handlers;
 use std::sync::Arc;
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use tokio::sync::Mutex;
-use rusqlite::Connection;
 use std::time::Instant;
 
 pub struct AppState {
     pub total_lines: Arc<Mutex<(i32, i32)>>,
     pub last_sync_count: Arc<Mutex<i32>>,
-    pub db_conn: Arc<Mutex<Connection>>,
+    pub db_conn: Pool<SqliteConnectionManager>,
     pub ignore_events_until: Arc<Mutex<Instant>>,
 }
 
@@ -62,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
     let app_state = AppState {
         total_lines: Arc::new(Mutex::new((0, 0))),
         last_sync_count: Arc::new(Mutex::new(0)),
-        db_conn: Arc::new(Mutex::new(db_conn)),
+        db_conn: db_conn,
         ignore_events_until: Arc::new(Mutex::new(Instant::now())),
     };
 

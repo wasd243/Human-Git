@@ -30,3 +30,5 @@ src-tauri/icons/ios/
 Thumbs.db
 .aider*
 *.db
+humangit_cache.db-shm
+humangit_cache.db-wal

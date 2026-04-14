@@ -116,14 +116,17 @@ pub async fn process_mutation(paths: Vec<PathBuf>, app_handle: &AppHandle) -> an
                 }
             }
             
-            let db_conn = state.db_conn.lock().await;
-            let _ = db_conn.execute(
-                "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
-                (
-                    format!("{:?}", paths),
-                    status_msg,
-                ),
-            );
+            if let Ok(db_conn) = state.db_conn.get() {
+                let _ = db_conn.execute(
+                    "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
+                    (
+                        format!("{:?}", paths),
+                        status_msg,
+                    ),
+                );
+            } else {
+                eprintln!("[ERR] Failed to acquire DB connection from pool");
+            }
         }
         Err(e) => {
             eprintln!("[ERR] Failed to compute diff stats: {}", e);
