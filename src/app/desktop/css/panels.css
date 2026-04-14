@@ -41,6 +41,7 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    animation: leftUiColorSwitch 2s infinite alternate ease-in-out;
 }
 
 #left-ui.show {
@@ -66,6 +67,29 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    animation: topUiColorSwitch 2s infinite alternate ease-in-out;
+}
+
+@keyframes topUiColorSwitch {
+    0% {
+        color: #4dfba6; /* 嫩绿/石绿 */
+        text-shadow: 0 0 8px rgba(77, 251, 166, 0.3);
+    }
+    100% {
+        color: #4de0fb; /* 湖青/石青 */
+        text-shadow: 0 0 12px rgba(77, 224, 251, 0.4);
+    }
+}
+
+@keyframes leftUiColorSwitch {
+    0% {
+        color: rgba(86, 119, 189, 0.8);
+        text-shadow: 0 0 8px rgba(31, 54, 104, 0.9);
+    }
+    100% {
+        color: rgba(224, 110, 138, 0.7);
+        text-shadow: 0 0 12px rgba(188, 45, 81, 0.9);
+    }
 }
 
 .top-ui.show {
@@ -78,4 +102,9 @@
     border: none;
     background: rgba(0, 0, 0, 0.1);
     border-radius: 8px;
+}
+
+#btn-sync {
+    color: inherit;
+    text-shadow: inherit;
 }
