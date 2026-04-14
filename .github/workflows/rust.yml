@@ -12,14 +12,10 @@ env:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
-    - name: Install GLib dependencies
-      run: sudo apt-get update && sudo apt-get install -y libglib2.0-dev
-      
-    - uses: actions/checkout@v4
-    
+    # Don't needs to use sudo
     - name: Build
       run: cargo build --verbose
       
