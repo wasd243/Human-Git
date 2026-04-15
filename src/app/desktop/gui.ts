@@ -202,8 +202,9 @@ const refreshFileList = async () => {
         files.forEach(file => {
             const div = document.createElement("div");
             div.className = "file-item";
+            const isChecked = file.x !== "" && file.x !== " ";
             div.innerHTML = `
-                <input type="checkbox" data-path="${file.path}">
+                <input type="checkbox" data-path="${file.path}" ${isChecked ? "checked" : ""}>
                 <span class="file-status">[${file.x}${file.y}]</span>
                 <span class="file-path">${file.path}</span>
             `;
@@ -245,7 +246,7 @@ btnStageSelected.addEventListener("click", async () => {
     try {
         const result = await invoke<string>("stage_files", { paths });
         printLog(`[SUCCESS] ${result}`);
-        refreshFileList();
+        await refreshFileList();
     } catch (e) {
         printLog(`[ERR] ${e}`);
     }
@@ -255,7 +256,7 @@ btnStageAll.addEventListener("click", async () => {
     try {
         const result = await invoke<string>("stage_files", { paths: ["*"] });
         printLog(`[SUCCESS] ${result}`);
-        refreshFileList();
+        await refreshFileList();
     } catch (e) {
         printLog(`[ERR] ${e}`);
     }
@@ -273,7 +274,7 @@ btnCommit.addEventListener("click", async () => {
         const result = await invoke<string>("commit_changes", { message: msg });
         printLog(`[SUCCESS] ${result}`);
         commitMessageEl.value = "";
-        refreshFileList();
+        await refreshFileList();
     } catch (e) {
         printLog(`[ERR] ${e}`);
     }
@@ -281,7 +282,7 @@ btnCommit.addEventListener("click", async () => {
 
 btnPush.addEventListener("click", async () => {
     try {
-        printLog("[GIT] Pushing to origin/main...");
+        printLog("[GIT] Pushing current branch to origin...");
         const result = await invoke<string>("push_changes");
         printLog(`[SUCCESS] ${result}`);
     } catch (e) {
