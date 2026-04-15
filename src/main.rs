@@ -29,7 +29,7 @@ pub mod modules {
 
         pub mod utils {
             pub mod color;
-            pub mod utils;
+            pub mod db;
         }
     }
     pub mod watcher;
@@ -52,7 +52,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let db_conn = match modules::shared::utils::utils::Database::init() {
+    let db_conn = match modules::shared::utils::db::Database::init() {
         Ok(c) => c,
         Err(e) => {
             eprintln!("[FATAL] DB Init failed: {}", e);
