@@ -8,15 +8,14 @@ pub struct DiffStats {
 }
 
 pub fn get_stats(repo_path: &str) -> anyhow::Result<DiffStats> {
-    let repo = Repository::open(repo_path)?;
-    let head = repo.head()?.peel_to_tree()?;
+    let repo = Repository::discover(repo_path)?;
     let mut opts = DiffOptions::new();
-    opts.include_untracked(true);
+    opts.include_untracked(true).recurse_untracked_dirs(true);
 
-    let diff = repo.diff_tree_to_workdir_with_index(Some(&head), Some(&mut opts))?;
+    let head_tree = repo.head().ok().and_then(|head| head.peel_to_tree().ok());
+    let diff = repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut opts))?;
     let stats = diff.stats()?;
 
-    // Elegant, very elegant! Call native API directly, no need to parse strings.
     Ok(DiffStats {
         insertions: stats.insertions() as i32,
         deletions: stats.deletions() as i32,

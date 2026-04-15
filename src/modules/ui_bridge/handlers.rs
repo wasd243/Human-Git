@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::modules::git::executor;
 use crate::modules::operations::{init, add, commit, commit_and_push as quick_deploy, push};
-use crate::modules::repo::history;
+use crate::modules::repo::{history, diff};
 use crate::AppState;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -34,10 +34,28 @@ pub async fn git_init(repo_path: String) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn get_initial_stats(state: tauri::State<'_, AppState>) -> Result<MutationPayload, String> {
-    let total_lines = state.total_lines.lock().await;
+    let repo_path = {
+        let current = state.current_repo_path.lock().await;
+        current
+            .as_ref()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or(".".to_string())
+    };
+
+    let stats = tokio::task::spawn_blocking(move || diff::get_stats(&repo_path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+
+    {
+        let mut total_lines = state.total_lines.lock().await;
+        total_lines.0 = stats.insertions;
+        total_lines.1 = stats.deletions;
+    }
+
     Ok(MutationPayload {
-        insertions: total_lines.0,
-        deletions: total_lines.1,
+        insertions: stats.insertions,
+        deletions: stats.deletions,
     })
 }
 
