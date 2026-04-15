@@ -31,6 +31,7 @@ const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 const fileListEl = document.getElementById("file-list")!;
 const btnStageSelected = document.getElementById("btn-stage-selected")!;
 const btnStageAll = document.getElementById("btn-stage-all")!;
+const btnQuickDeploy = document.getElementById("btn-quick-deploy") as HTMLButtonElement;
 const btnCommit = document.getElementById("btn-commit")!;
 const btnPush = document.getElementById("btn-push")!;
 const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
@@ -199,6 +200,7 @@ const refreshFileList = async () => {
     try {
         const files = await invoke<FileStatus[]>("get_working_status");
         fileListEl.innerHTML = "";
+        btnQuickDeploy.disabled = files.length === 0;
         files.forEach(file => {
             const div = document.createElement("div");
             div.className = "file-item";
@@ -217,6 +219,7 @@ const refreshFileList = async () => {
             fileListEl.appendChild(div);
         });
     } catch (e) {
+        btnQuickDeploy.disabled = true;
         printLog(`[ERR] Failed to fetch file status: ${e}`);
     }
 };
@@ -287,6 +290,28 @@ btnPush.addEventListener("click", async () => {
         printLog(`[SUCCESS] ${result}`);
     } catch (e) {
         printLog(`[ERR] ${e}`);
+    }
+});
+
+btnQuickDeploy.addEventListener("click", async () => {
+    if (btnQuickDeploy.disabled) {
+        return;
+    }
+
+    const message = commitMessageEl.value.trim();
+    const payload = message ? { message } : { message: null };
+
+    btnQuickDeploy.disabled = true;
+
+    try {
+        printLog("[GIT] Running quick deploy: stage, commit, push...");
+        const result = await invoke<string>("commit_and_push", payload);
+        printLog(`[SUCCESS] ${result}`);
+        commitMessageEl.value = "";
+    } catch (e) {
+        printLog(`[ERR] ${e}`);
+    } finally {
+        await refreshFileList();
     }
 });
 

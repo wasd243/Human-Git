@@ -11,6 +11,7 @@ pub mod modules {
         pub mod add;
         pub mod checkout;
         pub mod commit;
+        pub mod commit_and_push;
         pub mod push;
         pub mod run_shadow_sync;
         pub mod init;
@@ -80,6 +81,7 @@ async fn main() -> anyhow::Result<()> {
             handlers::git_init,
             handlers::stage_files,
             handlers::commit_changes,
+            handlers::commit_and_push,
             handlers::push_changes,
             handlers::get_working_status,
             open_folder::update_repo_path,

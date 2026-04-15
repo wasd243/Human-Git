@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::modules::git::executor;
-use crate::modules::operations::{init, add, commit, push};
+use crate::modules::operations::{init, add, commit, commit_and_push as quick_deploy, push};
 use crate::modules::repo::history;
 use crate::AppState;
 
@@ -75,6 +75,21 @@ pub async fn push_changes(state: tauri::State<'_, AppState>) -> Result<String, S
 
     tokio::task::spawn_blocking(move || {
         push::push_to_origin(&repo_path)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn commit_and_push(state: tauri::State<'_, AppState>, message: Option<String>) -> Result<String, String> {
+    let repo_path = {
+        let current = state.current_repo_path.lock().await;
+        current.as_ref().map(|p| p.to_string_lossy().to_string()).unwrap_or(".".to_string())
+    };
+
+    tokio::task::spawn_blocking(move || {
+        quick_deploy::commit_and_push(&repo_path, message.as_deref())
     })
     .await
     .map_err(|e| e.to_string())?
