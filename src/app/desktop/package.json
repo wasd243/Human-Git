@@ -1,6 +1,6 @@
 {
   "name": "humangit-desktop",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "HumanGit Frontend",
   "scripts": {
     "dev": "vite",

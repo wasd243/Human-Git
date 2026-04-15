@@ -1,7 +1,7 @@
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-// 在编译时将文件内容“拍”进变量里
+// "Bake" the file content into a variable at compile time
 const INIT_SQL: &str = include_str!("schema.sql");
 
 pub struct Database;
@@ -14,7 +14,7 @@ impl Database {
 
         println!("[DB] Connection pool established: {}", path);
 
-        // 直接执行整段 SQL 脚本
+        // Execute the entire SQL script directly
         let conn = pool.get()?;
         conn.execute_batch(INIT_SQL)?;
 

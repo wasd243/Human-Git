@@ -1,6 +1,7 @@
 use crate::modules::operations::run_shadow_sync::process_mutation;
 use crate::modules::shared::utils::color::log_color;
-use crate::modules::repo::history;
+use crate::modules::repo::{history, diff};
+use crate::modules::ui_bridge::handlers::MutationPayload;
 use ignore::gitignore::GitignoreBuilder;
 use notify_debouncer_mini::{new_debouncer, notify::RecursiveMode, DebounceEventResult};
 use std::env;
@@ -92,6 +93,30 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
             }
         }
         Err(e) => log_color_fn("[ERR]", &format!("Failed to get working status: {}", e), "red"),
+    }
+
+    match diff::get_stats(".") {
+        Ok(stats) => {
+            let state = app_handle.state::<AppState>();
+            let mut total_lines = state.total_lines.lock().await;
+            total_lines.0 = stats.insertions;
+            total_lines.1 = stats.deletions;
+
+            let accumulated = stats.insertions + stats.deletions;
+            let mut last_sync = state.last_sync_count.lock().await;
+            *last_sync = accumulated;
+
+            let _ = app_handle.emit("git-mutation", MutationPayload {
+                insertions: total_lines.0,
+                deletions: total_lines.1,
+            });
+            log_color_fn(
+                "[SYSTEM]",
+                &format!("Initial lines changed: +{} / -{}", stats.insertions, stats.deletions),
+                "green"
+            );
+        }
+        Err(e) => log_color_fn("[ERR]", &format!("Failed to get initial diff stats: {}", e), "red"),
     }
 
     let (tx, mut rx) = mpsc::channel::<DebounceEventResult>(100);

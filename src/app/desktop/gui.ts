@@ -1,5 +1,7 @@
 import {invoke} from "@tauri-apps/api/core";
 import {listen} from "@tauri-apps/api/event";
+import "/css/components.css";
+import "/css/panels.css";
 
 // 定义一个简单的结构体，对应 Rust 发过来的数据
 interface MutationPayload {
@@ -130,6 +132,14 @@ listen<MutationPayload>("git-mutation", (event) => {
     printLog(`Detected movement: +${insertions} / -${deletions}`);
 });
 
+// 1.5 Fetch initial stats right after UI loads
+invoke<MutationPayload>("get_initial_stats").then((payload) => {
+    insEl.textContent = payload.insertions.toString();
+    delEl.textContent = payload.deletions.toString();
+}).catch((e) => {
+    printLog(`[ERR] Failed to fetch initial stats: ${e}`);
+});
+
 // 2. 按钮点击触发手动同步
 syncBtn.addEventListener("click", async () => {
     printLog("Connecting to shadow dimension...");
@@ -148,17 +158,32 @@ printLog("[HumanGit] Engine Online.");
 // --- UI Additions for SHADOW_SYNC ---
 const triggerBtn = document.createElement("button");
 triggerBtn.id = "top-left-sync-btn";
-triggerBtn.textContent = "SHADOW SYNC";
+triggerBtn.innerHTML = `<span class="gear-icon">⚙</span>`;
 document.body.appendChild(triggerBtn);
 
-const anotherUI = document.createElement("div");
-anotherUI.id = "another-ui-panel";
-document.body.appendChild(anotherUI);
+const leftUI = document.createElement("div");
+leftUI.id = "left-ui";
+document.body.appendChild(leftUI);
 
 // Move the original sync button into the new UI
-anotherUI.appendChild(syncBtn);
+leftUI.appendChild(syncBtn);
 
 // Interactions
 triggerBtn.addEventListener("click", () => {
-    anotherUI.classList.toggle("show");
+    leftUI.classList.toggle("show");
+});
+
+// --- UI Additions for Show Changes ---
+const btnShowChanges = document.getElementById("btn-show-changes")!;
+const topUI = document.getElementById("top-ui")!;
+const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
+
+btnShowChanges.addEventListener("click", () => {
+    topUI.classList.add("show");
+    btnShowChanges.style.display = "none";
+});
+
+btnCloseTopUI.addEventListener("click", () => {
+    topUI.classList.remove("show");
+    btnShowChanges.style.display = "";
 });

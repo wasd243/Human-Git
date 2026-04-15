@@ -1,12 +1,12 @@
 use anyhow::{Context, Result};
 use git2::{Repository, Signature, StatusOptions, StashFlags};
 
-/// 在给定的仓库路径下执行一次“shadow sync”：
-/// - 使用 `git stash push -u -m "humangit-shadow-sync"` 保存当前未提交的修改（含未跟踪文件）
-/// - 如果存在待提交的变更（git status --porcelain 非空），执行 git add -A && git commit -m "[HumanGit] shadow sync" && git push（尝试）
-/// - 最后，如果之前创建了 stash，则执行 git stash pop 恢复工作区
+/// Execute a "shadow sync" in the given repository path:
+/// - Use `git stash push -u -m "humangit-shadow-sync"` to save current uncommitted changes (including untracked files)
+/// - If there are pending changes (git status --porcelain is not empty), execute git add -A && git commit -m "[HumanGit] shadow sync" && git push (attempt)
+/// - Finally, if a stash was created earlier, execute git stash pop to restore the workspace
 ///
-/// 该函数尽量将可能发生的错误包装并返回，但对部分非致命错误会容忍，以避免阻塞主流程。
+/// This function tries to wrap and return possible errors, but tolerates some non-fatal errors to avoid blocking the main flow.
 pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     let mut repo = Repository::discover(repo_path).context("Failed to open repository")?;
 
@@ -42,7 +42,7 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
         Err(e) => return Err(e.into()),
     }
 
-    // 3) 切换到影子分支 (如果不存在则创建)
+    // 3) Switch to shadow branch (create if it doesn't exist)
     let shadow_ref_name = {
         let commit = repo.head()?.peel_to_commit()?;
         let shadow_branch = repo.branch("humangit-shadow", &commit, true)?;
@@ -51,7 +51,7 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     repo.set_head(&shadow_ref_name)?;
     repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
 
-    // 4) 把刚才存的东西“复印”一份到影子分支
+    // 4) "Copy" the stashed items to the shadow branch
     if stashed {
         if let Err(e) = repo.stash_apply(0, None) {
             eprintln!("[ERR] Failed to apply stash to shadow branch: {}", e);
@@ -77,18 +77,18 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
         );
     }
 
-    // 5) 尝试 Push（可选，如果没上游会失败但没关系）
+    // 5) Try to Push (optional, will fail if no upstream but that's fine)
     if let Ok(mut remote) = repo.find_remote("origin") {
         let mut push_options = git2::PushOptions::new();
         let _ = remote.push(&["refs/heads/humangit-shadow:refs/heads/humangit-shadow"], Some(&mut push_options));
     }
 
-    // 6) 回归原始时空
+    // 6) Return to original dimension
     let original_ref = format!("refs/heads/{}", current_branch);
     repo.set_head(&original_ref)?;
     repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
 
-    // 7) 恢复 IDE 的彩色标记：把 stash pop 出来
+    // 7) Restore IDE color markers: pop the stash out
     if stashed {
         match repo.stash_pop(0, None) {
             Ok(_) => eprintln!("[SUCCESS] Shadow checkpoint created. IDE markers preserved."),

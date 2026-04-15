@@ -10,8 +10,8 @@ pub struct Commit {
 
 #[derive(Debug)]
 pub struct FileStatus {
-    pub x: char,   // staged 状态
-    pub y: char,   // unstaged 状态
+    pub x: char,   // staged status
+    pub y: char,   // unstaged status
     pub path: String,
 }
 
