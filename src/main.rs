@@ -12,10 +12,10 @@ pub mod modules {
         pub mod checkout;
         pub mod commit;
         pub mod commit_and_push;
-        pub mod push;
-        pub mod run_shadow_sync;
         pub mod init;
         pub mod open_folder;
+        pub mod push;
+        pub mod run_shadow_sync;
     }
     // Git core
     pub mod git {
@@ -39,13 +39,13 @@ pub mod modules {
 }
 
 // 2. Import required dependencies
-use crate::modules::ui_bridge::handlers;
 use crate::modules::operations::open_folder;
-use std::sync::Arc;
+use crate::modules::ui_bridge::handlers;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use tokio::sync::Mutex;
+use std::sync::Arc;
 use std::time::Instant;
+use tokio::sync::Mutex;
 
 pub struct AppState {
     pub total_lines: Arc<Mutex<(i32, i32)>>,
@@ -76,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
     tauri::Builder::default()
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
-            handlers::run_shadow_sync, 
+            handlers::run_shadow_sync,
             handlers::get_initial_stats,
             handlers::git_init,
             handlers::stage_files,
