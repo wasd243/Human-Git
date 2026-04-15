@@ -43,7 +43,10 @@ let velocity = 0; // 当前滚动的速度
 const maxSpeed = 5; // 最大滚动速度 (px/frame)
 const idleSpeed = -0.3; // 像 MC 界面那样的中间区域自动缓慢向左滑动 (px/frame)
 const edgeWidth = 0.2; // 屏幕边缘触发滚动的范围 (左右各 20%)
-let baseOffset = 0; // 自动滚动的基准 (负数向左移)
+// --- 滚动状态管理 ---
+let pos1 = 0;
+let pos2 = 0;
+let isPositionsInitialized = false; // 用于确保获取到图片宽度后再初始化
 let isInitialized = false;
 
 // 记录背景图片的纵横比以计算循环宽度
@@ -61,32 +64,59 @@ bgImg.onload = () => {
 };
 
 // 每一帧更新位置的函数
+// 每一帧更新位置的函数
 const animate = () => {
     if (isInitialized) {
-        // 更新基准偏移
-        baseOffset += velocity;
-
-        // 计算当前图片的实际渲染宽度 (使用 vh 保持一致性)
         const vh = window.innerHeight;
+        const vw = window.innerWidth;
         const imgWidth = vh * imgAspectRatio;
 
-        // 实现无缝循环
         if (imgWidth > 0) {
-            baseOffset %= imgWidth;
-            // 确保如果 baseOffset 变成正数（向右滑），也能正确回绕到负数区间实现无缝连接
-            if (baseOffset > 0) baseOffset -= imgWidth;
-        }
+            // 第一次拿到实际宽度时，安排画 B 在画 A 右边待命
+            if (!isPositionsInitialized) {
+                pos1 = 0;
+                pos2 = imgWidth;
+                isPositionsInitialized = true;
 
-        // 最终安全检查：防止 NaN 或 Infinity 导致 backgroundPosition 失效
-        if (!isFinite(baseOffset)) {
-            baseOffset = 0;
-        }
+                // 引擎启动时的卷轴展开特效：直接向左拉开两屏
+                pos1 -= vh * 2;
+                pos2 -= vh * 2;
+            }
 
-        // 双层并排渲染：第一层在 baseOffset，第二层紧跟在其右侧，避免边界露底色
-        const nextOffset = baseOffset + imgWidth;
-        bgCanvas.style.backgroundPosition = `${baseOffset}px center, ${nextOffset}px center`;
+            // 两幅画齐步走 (运用之前的缓动速度)
+            pos1 += velocity;
+            pos2 += velocity;
+
+            // --- 核心：彻底挪出界面才会消失并接力 ---
+
+            // 场景 1: 向左滑动 (velocity < 0)
+            if (pos1 <= -imgWidth) {
+                // 画 1 彻底越过左边界，传送到画 2 右侧
+                pos1 = pos2 + imgWidth;
+            }
+            if (pos2 <= -imgWidth) {
+                // 画 2 彻底越过左边界，传送到画 1 右侧
+                pos2 = pos1 + imgWidth;
+            }
+
+            // 场景 2: 向右滑动 (velocity > 0，鼠标靠左时触发)
+            if (pos1 >= vw) {
+                // 画 1 彻底越过右边界，传送到画 2 左侧
+                pos1 = pos2 - imgWidth;
+            }
+            if (pos2 >= vw) {
+                // 画 2 彻底越过右边界，传送到画 1 左侧
+                pos2 = pos1 - imgWidth;
+            }
+
+            // 最终安全检查，避免偶尔的浮点数崩溃
+            if (isFinite(pos1) && isFinite(pos2)) {
+                // 将两个坐标绑定到背景图层上
+                bgCanvas.style.backgroundPosition = `${pos1}px center, ${pos2}px center`;
+            }
+        }
     }
-    requestAnimationFrame(animate); // 循环调用
+    requestAnimationFrame(animate); // 循环调用保持 60/144fps
 };
 
 // 启动动画循环
@@ -134,7 +164,7 @@ const printLog = (msg: string) => {
         bgCanvas.classList.add("engine-active");
 
         // 2. 核心：使用 window.innerHeight 动态计算，大约向左滑 2 倍的高度，以此隐藏原版的落款和注释
-        baseOffset -= window.innerHeight * 2;
+        pos1 -= window.innerHeight * 2;
     }
 };
 
