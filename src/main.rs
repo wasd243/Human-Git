@@ -79,6 +79,8 @@ async fn main() -> anyhow::Result<()> {
             handlers::get_initial_stats,
             handlers::git_init,
             handlers::stage_files,
+            handlers::commit_changes,
+            handlers::push_changes,
             handlers::get_working_status,
             open_folder::update_repo_path,
             open_folder::open_folder_dialog

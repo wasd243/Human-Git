@@ -25,7 +25,18 @@
     
     <div id="file-staging-area">
         <div id="file-list"></div>
-        <button id="btn-stage-selected" class="human-git-main-btn stage-btn">Stage Selected</button>
+        <div class="staging-buttons">
+            <button id="btn-stage-selected" class="human-git-main-btn stage-btn">Stage Selected</button>
+            <button id="btn-stage-all" class="human-git-main-btn stage-btn">Stage All</button>
+        </div>
+    </div>
+
+    <div id="commit-push-area">
+        <textarea id="commit-message" placeholder="Type your commit message here..."></textarea>
+        <div class="commit-push-buttons">
+            <button id="btn-commit" class="human-git-main-btn commit-btn">Commit</button>
+            <button id="btn-push" class="human-git-main-btn push-btn">Push</button>
+        </div>
     </div>
 
     <div class="monitor-panel">

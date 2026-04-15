@@ -30,6 +30,10 @@ const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 const fileListEl = document.getElementById("file-list")!;
 const btnStageSelected = document.getElementById("btn-stage-selected")!;
+const btnStageAll = document.getElementById("btn-stage-all")!;
+const btnCommit = document.getElementById("btn-commit")!;
+const btnPush = document.getElementById("btn-push")!;
+const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
 // 找到全屏背景层
 const bgCanvas = document.getElementById("千里江山图")!;
 
@@ -242,6 +246,44 @@ btnStageSelected.addEventListener("click", async () => {
         const result = await invoke<string>("stage_files", { paths });
         printLog(`[SUCCESS] ${result}`);
         refreshFileList();
+    } catch (e) {
+        printLog(`[ERR] ${e}`);
+    }
+});
+
+btnStageAll.addEventListener("click", async () => {
+    try {
+        const result = await invoke<string>("stage_files", { paths: ["*"] });
+        printLog(`[SUCCESS] ${result}`);
+        refreshFileList();
+    } catch (e) {
+        printLog(`[ERR] ${e}`);
+    }
+});
+
+btnCommit.addEventListener("click", async () => {
+    const msg = commitMessageEl.value.trim();
+    if (!msg) {
+        printLog("[SYSTEM] Commit message cannot be empty.");
+        return;
+    }
+
+    try {
+        printLog("[GIT] Creating commit...");
+        const result = await invoke<string>("commit_changes", { message: msg });
+        printLog(`[SUCCESS] ${result}`);
+        commitMessageEl.value = "";
+        refreshFileList();
+    } catch (e) {
+        printLog(`[ERR] ${e}`);
+    }
+});
+
+btnPush.addEventListener("click", async () => {
+    try {
+        printLog("[GIT] Pushing to origin/main...");
+        const result = await invoke<string>("push_changes");
+        printLog(`[SUCCESS] ${result}`);
     } catch (e) {
         printLog(`[ERR] ${e}`);
     }
