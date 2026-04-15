@@ -9,6 +9,12 @@ interface MutationPayload {
     deletions: number;
 }
 
+interface FileStatus {
+    x: string;
+    y: string;
+    path: string;
+}
+
 // 找到那些显示数字的元素
 const insEl = document.getElementById("ins-value")!;
 const delEl = document.getElementById("del-value")!;
@@ -22,6 +28,8 @@ const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
 const btnCloseBottomUI = document.getElementById("btn-close-bottom-ui")!;
 const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
+const fileListEl = document.getElementById("file-list")!;
+const btnStageSelected = document.getElementById("btn-stage-selected")!;
 // 找到全屏背景层
 const bgCanvas = document.getElementById("千里江山图")!;
 
@@ -183,16 +191,60 @@ triggerBtn.addEventListener("click", () => {
 
 // --- UI Additions for Show Changes ---
 
+const refreshFileList = async () => {
+    try {
+        const files = await invoke<FileStatus[]>("get_working_status");
+        fileListEl.innerHTML = "";
+        files.forEach(file => {
+            const div = document.createElement("div");
+            div.className = "file-item";
+            div.innerHTML = `
+                <input type="checkbox" data-path="${file.path}">
+                <span class="file-status">[${file.x}${file.y}]</span>
+                <span class="file-path">${file.path}</span>
+            `;
+            div.addEventListener("click", (e) => {
+                if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                    const checkbox = div.querySelector('input')!;
+                    checkbox.checked = !checkbox.checked;
+                }
+            });
+            fileListEl.appendChild(div);
+        });
+    } catch (e) {
+        printLog(`[ERR] Failed to fetch file status: ${e}`);
+    }
+};
+
 btnShowChanges.addEventListener("click", () => {
     topUI.classList.add("show");
     btnShowChanges.style.display = "none";
     btnGitInit.style.display = "none";
+    refreshFileList();
 });
 
 btnCloseTopUI.addEventListener("click", () => {
     topUI.classList.remove("show");
     btnShowChanges.style.display = "";
     btnGitInit.style.display = "";
+});
+
+btnStageSelected.addEventListener("click", async () => {
+    const checkboxes = fileListEl.querySelectorAll('input[type="checkbox"]:checked');
+    const paths = Array.from(checkboxes).map(cb => (cb as HTMLInputElement).dataset.path!);
+    
+    if (paths.length === 0) {
+        printLog("[SYSTEM] No files selected for staging.");
+        return;
+    }
+
+    try {
+        const result = await invoke<string>("stage_files", { paths });
+        printLog(`[SUCCESS] ${result}`);
+        refreshFileList();
+    } catch (e) {
+        printLog(`[ERR] ${e}`);
+    }
 });
 
 // --- UI Additions for Git Init ---

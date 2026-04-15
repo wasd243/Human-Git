@@ -78,6 +78,8 @@ async fn main() -> anyhow::Result<()> {
             handlers::run_shadow_sync, 
             handlers::get_initial_stats,
             handlers::git_init,
+            handlers::stage_files,
+            handlers::get_working_status,
             open_folder::update_repo_path,
             open_folder::open_folder_dialog
         ])

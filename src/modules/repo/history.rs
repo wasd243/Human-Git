@@ -1,14 +1,15 @@
 use git2::{Repository, StatusOptions, Sort};
 use std::io::{self, Error};
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Commit {
     pub hash: String,
     pub parents: Vec<String>,
     pub message: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileStatus {
     pub x: char,   // staged status
     pub y: char,   // unstaged status
