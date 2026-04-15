@@ -5,7 +5,7 @@ use crate::AppState;
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter, Manager};
 
-pub async fn process_mutation(paths: Vec<PathBuf>, app_handle: &AppHandle) -> anyhow::Result<()> {
+pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: &AppHandle) -> anyhow::Result<()> {
     let log_raw = |msg: &str| {
         println!("{}", msg);
         let _ = app_handle.emit("log-event", msg.to_string());
@@ -23,7 +23,7 @@ pub async fn process_mutation(paths: Vec<PathBuf>, app_handle: &AppHandle) -> an
         "yellow",
     );
 
-    let status_msg = match history::get_working_status() {
+    let status_msg = match history::get_working_status(repo_path) {
         Ok(statuses) => {
             let mut msg = String::new();
             for status in &statuses {
@@ -38,7 +38,7 @@ pub async fn process_mutation(paths: Vec<PathBuf>, app_handle: &AppHandle) -> an
         log_color_fn("[GIT]", &format!("Status:\n{}", status_msg), "cyan");
     }
 
-    match history::get_working_status() {
+    match history::get_working_status(repo_path) {
         Ok(statuses) => {
             let has_changes = history::has_changes(&statuses);
             log_color_fn("[REPO]", &format!("Has changes: {}", has_changes), "magenta");
@@ -47,7 +47,7 @@ pub async fn process_mutation(paths: Vec<PathBuf>, app_handle: &AppHandle) -> an
             }
             
             if has_changes {
-                if let Ok(files) = history::get_uncommitted_files() {
+                if let Ok(files) = history::get_uncommitted_files(repo_path) {
                     if !files.is_empty() {
                         log_color_fn("[FILES]", "Uncommitted changed files:", "yellow");
                         for file in files.lines() {
@@ -60,7 +60,7 @@ pub async fn process_mutation(paths: Vec<PathBuf>, app_handle: &AppHandle) -> an
         Err(e) => log_color_fn("[ERR]", &format!("Failed to get working status: {}", e), "red"),
     }
 
-    match diff::get_stats(".") {
+    match diff::get_stats(repo_path) {
         Ok(stats) => {
             let total_changed = stats.insertions + stats.deletions;
 
@@ -102,7 +102,7 @@ pub async fn process_mutation(paths: Vec<PathBuf>, app_handle: &AppHandle) -> an
                     "yellow",
                 );
 
-                match executor::run_shadow_sync(".") {
+                match executor::run_shadow_sync(repo_path) {
                     Ok(_) => {
                         *last_sync = accumulated;
                         let mut ignore_until = state.ignore_events_until.lock().await;

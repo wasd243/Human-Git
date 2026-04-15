@@ -96,6 +96,32 @@
     top: 0;
 }
 
+.bottom-ui {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -8px 32px 0 rgba(0, 0, 0, 0.1);
+    transition: bottom 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: topUiColorSwitch 2s infinite alternate ease-in-out;
+}
+
+.bottom-ui.show {
+    bottom: 0;
+}
+
 .top-ui .monitor-panel {
     width: 90vw;
     max-width: 600px;

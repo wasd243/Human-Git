@@ -14,6 +14,14 @@ const insEl = document.getElementById("ins-value")!;
 const delEl = document.getElementById("del-value")!;
 const consoleEl = document.getElementById("console-output")!;
 const syncBtn = document.getElementById("btn-sync")!;
+const btnShowChanges = document.getElementById("btn-show-changes")!;
+const btnGitInit = document.getElementById("btn-git-init")!;
+const topUI = document.getElementById("top-ui")!;
+const bottomUI = document.getElementById("bottom-ui")!;
+const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
+const btnCloseBottomUI = document.getElementById("btn-close-bottom-ui")!;
+const btnDoGitInit = document.getElementById("btn-do-git-init")!;
+const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 // 找到全屏背景层
 const bgCanvas = document.getElementById("千里江山图")!;
 
@@ -145,7 +153,7 @@ syncBtn.addEventListener("click", async () => {
     printLog("Connecting to shadow dimension...");
     try {
         // 调用 Rust 侧定义的 #[tauri::command]
-        await invoke("run_shadow_sync", {repoPath: "."});
+        await invoke("run_shadow_sync", { repoPath: null });
         printLog("Checkpoint created successfully.");
     } catch (e) {
         printLog(`Error: ${e}`);
@@ -174,16 +182,71 @@ triggerBtn.addEventListener("click", () => {
 });
 
 // --- UI Additions for Show Changes ---
-const btnShowChanges = document.getElementById("btn-show-changes")!;
-const topUI = document.getElementById("top-ui")!;
-const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
 
 btnShowChanges.addEventListener("click", () => {
     topUI.classList.add("show");
     btnShowChanges.style.display = "none";
+    btnGitInit.style.display = "none";
 });
 
 btnCloseTopUI.addEventListener("click", () => {
     topUI.classList.remove("show");
     btnShowChanges.style.display = "";
+    btnGitInit.style.display = "";
+});
+
+// --- UI Additions for Git Init ---
+
+btnGitInit.addEventListener("click", () => {
+    bottomUI.classList.add("show");
+    btnGitInit.style.display = "none";
+    btnShowChanges.style.display = "none";
+});
+
+btnCloseBottomUI.addEventListener("click", () => {
+    bottomUI.classList.remove("show");
+    btnGitInit.style.display = "";
+    btnShowChanges.style.display = "";
+});
+
+btnDoGitInit.addEventListener("click", async () => {
+    printLog("[GIT] Initializing repository...");
+    try {
+        const result = await invoke<string>("git_init", { repoPath: "." });
+        printLog(`[SUCCESS] ${result}`);
+    } catch (e) {
+        printLog(`[ERR] ${e}`);
+    }
+});
+
+btnChooseFolder.addEventListener("click", async () => {
+    printLog("[SYSTEM] Opening folder dialog...");
+    try {
+        const path = await invoke<string | null>("open_folder_dialog");
+        if (path) {
+            printLog(`[SYSTEM] Folder selected: ${path}`);
+            
+            // 1. Initialize repository
+            printLog("[GIT] Initializing repository in selected folder...");
+            try {
+                const initResult = await invoke<string>("git_init", { repoPath: path });
+                printLog(`[SUCCESS] git init succeed: ${initResult}`);
+            } catch (initErr) {
+                printLog(`[ERR] git init failed: ${initErr}`);
+            }
+            
+            // 2. Activate the listener and refresh cache/stats
+            await invoke("update_repo_path", { path: path });
+            printLog(`[SYSTEM] Monitoring switched to: ${path}`);
+
+            // 3. Refresh UI stats
+            const stats = await invoke<MutationPayload>("get_initial_stats");
+            insEl.textContent = stats.insertions.toString();
+            delEl.textContent = stats.deletions.toString();
+        } else {
+            printLog("[SYSTEM] Folder selection cancelled.");
+        }
+    } catch (e) {
+        printLog(`[ERR] ${e}`);
+    }
 });

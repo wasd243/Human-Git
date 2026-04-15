@@ -4,20 +4,18 @@ use crate::modules::repo::{history, diff};
 use crate::modules::ui_bridge::handlers::MutationPayload;
 use ignore::gitignore::GitignoreBuilder;
 use notify_debouncer_mini::{new_debouncer, notify::RecursiveMode, DebounceEventResult};
-use std::env;
 use std::time::{Duration, SystemTime};
 use std::collections::HashMap;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
 use crate::AppState;
-use anyhow::Context;
 
 pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
     let log_raw = |msg: &str| {
         println!("{}", msg);
         let _ = app_handle.emit("log-event", msg.to_string());
     };
-    
+
     let log_color_fn = |label: &str, msg: &str, color: &str| {
         log_color(label, msg, color);
         let _ = app_handle.emit("log-event", format!("{} {}", label, msg));
@@ -28,164 +26,208 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
     log_raw("[STATUS] Monitoring baseline reality...");
     log_raw("--------------------------------------------------");
 
-    let current_dir = match env::current_dir() {
-        Ok(d) => d,
-        Err(_) => return Ok(()),
-    };
-
-    let mut builder = GitignoreBuilder::new(&current_dir);
-    builder.add(current_dir.join(".gitignore"));
-
-    let default_ignores = [
-        ".git",
-        ".git/*",
-        "target",
-        "target/*",
-        ".idea",
-        ".idea/*",
-        "humangit_cache.db*",
-        "*~",
-        "*.swp",
-        "*.tmp",
-        ".DS_Store",
-        "Thumbs.db",
-        "__pycache__",
-        "*.pyc",
-    ];
-
-    for glob in default_ignores {
-        let _ = builder.add_line(None, glob);
-    }
-
-    let gitignore = builder.build().context("Failed to build gitignore parser")?;
-
-    match history::get_commit_history() {
-        Ok(commits) => {
-            log_raw("--------------------------------------------------");
-            log_color_fn("[GIT]", "Recent Commit History:", "cyan");
-            for commit in commits.iter().take(5) {
-                log_raw(&format!("  [{}] {} (Parents: {})", commit.hash, commit.message, commit.parents.join(", ")));
-            }
-        }
-        Err(e) => log_color_fn("[ERR]", &format!("Failed to get history: {}", e), "red"),
-    }
-
-    match history::get_working_status() {
-        Ok(statuses) => {
-            let has_changes = history::has_changes(&statuses);
-            if has_changes {
-                log_raw("--------------------------------------------------");
-                log_color_fn("[REPO]", &format!("Current Working Status (Has changes: {})", has_changes), "magenta");
-                for status in statuses {
-                    log_raw(&format!("  [{} {}] {}", status.x, status.y, status.path));
-                }
-
-                if let Ok(files) = history::get_uncommitted_files() {
-                    if !files.is_empty() {
-                        log_color_fn("[FILES]", "Uncommitted changed files at startup:", "yellow");
-                        for file in files.lines() {
-                            log_raw(&format!("    {}", file));
-                        }
-                    }
-                }
-            } else {
-                log_color_fn("[REPO]", "Clean workspace: No uncommitted changes.", "green");
-            }
-        }
-        Err(e) => log_color_fn("[ERR]", &format!("Failed to get working status: {}", e), "red"),
-    }
-
-    match diff::get_stats(".") {
-        Ok(stats) => {
+    loop {
+        let current_dir = {
             let state = app_handle.state::<AppState>();
-            let mut total_lines = state.total_lines.lock().await;
-            total_lines.0 = stats.insertions;
-            total_lines.1 = stats.deletions;
+            let path_opt = state.current_repo_path.lock().await.clone();
+            match path_opt {
+                Some(d) => d,
+                None => {
+                    tokio::time::sleep(Duration::from_millis(500)).await;
+                    continue;
+                }
+            }
+        };
 
-            let accumulated = stats.insertions + stats.deletions;
-            let mut last_sync = state.last_sync_count.lock().await;
-            *last_sync = accumulated;
+        log_raw(&format!("[SYSTEM] Starting watcher for: {:?}", current_dir));
 
-            let _ = app_handle.emit("git-mutation", MutationPayload {
-                insertions: total_lines.0,
-                deletions: total_lines.1,
-            });
-            log_color_fn(
-                "[SYSTEM]",
-                &format!("Initial lines changed: +{} / -{}", stats.insertions, stats.deletions),
-                "green"
-            );
+        let mut builder = GitignoreBuilder::new(&current_dir);
+        builder.add(current_dir.join(".gitignore"));
+
+        let default_ignores = [
+            ".git",
+            ".git/*",
+            "target",
+            "target/*",
+            ".idea",
+            ".idea/*",
+            "humangit_cache.db*",
+            "*~",
+            "*.swp",
+            "*.tmp",
+            ".DS_Store",
+            "Thumbs.db",
+            "__pycache__",
+            "*.pyc",
+        ];
+
+        for glob in default_ignores {
+            let _ = builder.add_line(None, glob);
         }
-        Err(e) => log_color_fn("[ERR]", &format!("Failed to get initial diff stats: {}", e), "red"),
-    }
 
-    let (tx, mut rx) = mpsc::channel::<DebounceEventResult>(100);
-
-    let mut debouncer = new_debouncer(
-        Duration::from_millis(500),
-        move |res: DebounceEventResult| {
-            let _ = tx.blocking_send(res);
-        },
-    ).context("Watcher failed")?;
-
-    debouncer.watcher()
-        .watch(&current_dir, RecursiveMode::Recursive)
-        .context("Watch failed")?;
-
-    log_color_fn("[SUCCESS]", "HumanGit is now visually active.", "green");
-
-    let watcher_dir = current_dir.clone();
-    let mut last_modified_map: HashMap<std::path::PathBuf, SystemTime> = HashMap::new();
-
-    while let Some(res) = rx.recv().await {
-        // Check if we should ignore events globally right now
-        {
-            let state = app_handle.state::<AppState>();
-            let ignore_until = *state.ignore_events_until.lock().await;
-            if std::time::Instant::now() < ignore_until {
+        let gitignore = match builder.build() {
+            Ok(g) => g,
+            Err(e) => {
+                log_color_fn("[ERR]", &format!("Failed to build gitignore: {}", e), "red");
+                tokio::time::sleep(Duration::from_secs(2)).await;
                 continue;
             }
+        };
+
+        match history::get_commit_history(current_dir.to_str().unwrap_or(".")) {
+            Ok(commits) => {
+                log_raw("--------------------------------------------------");
+                log_color_fn("[GIT]", "Recent Commit History:", "cyan");
+                for commit in commits.iter().take(5) {
+                    log_raw(&format!("  [{}] {} (Parents: {})", commit.hash, commit.message, commit.parents.join(", ")));
+                }
+            }
+            Err(e) => log_color_fn("[ERR]", &format!("Failed to get history: {}", e), "red"),
         }
 
-        match res {
-            Ok(events) => {
-                let mut mutated_paths = Vec::new();
-                for event in events {
-                    let path = event.path;
-
-                    let rel_path = match path.strip_prefix(&watcher_dir) {
-                        Ok(relative) => relative,
-                        Err(_) => path.as_path(),
-                    };
-
-                    if let ignore::Match::Ignore(_) = gitignore.matched_path_or_any_parents(rel_path, false) {
-                        continue;
+        match history::get_working_status(current_dir.to_str().unwrap_or(".")) {
+            Ok(statuses) => {
+                let has_changes = history::has_changes(&statuses);
+                if has_changes {
+                    log_raw("--------------------------------------------------");
+                    log_color_fn("[REPO]", &format!("Current Working Status (Has changes: {})", has_changes), "magenta");
+                    for status in statuses {
+                        log_raw(&format!("  [{} {}] {}", status.x, status.y, status.path));
                     }
-                    
-                    // Ignore non-essential metadata changes
-                    if let Ok(metadata) = std::fs::metadata(&path) {
-                        if let Ok(modified) = metadata.modified() {
-                            if let Some(last) = last_modified_map.get(&path) {
-                                if *last == modified {
+
+                    if let Ok(files) = history::get_uncommitted_files(current_dir.to_str().unwrap_or(".")) {
+                        if !files.is_empty() {
+                            log_color_fn("[FILES]", "Uncommitted changed files at startup:", "yellow");
+                            for file in files.lines() {
+                                log_raw(&format!("    {}", file));
+                            }
+                        }
+                    }
+                } else {
+                    log_color_fn("[REPO]", "Clean workspace: No uncommitted changes.", "green");
+                }
+            }
+            Err(e) => log_color_fn("[ERR]", &format!("Failed to get working status: {}", e), "red"),
+        }
+
+        match diff::get_stats(current_dir.to_str().unwrap_or(".")) {
+            Ok(stats) => {
+                let state = app_handle.state::<AppState>();
+                let mut total_lines = state.total_lines.lock().await;
+                total_lines.0 = stats.insertions;
+                total_lines.1 = stats.deletions;
+
+                let accumulated = stats.insertions + stats.deletions;
+                let mut last_sync = state.last_sync_count.lock().await;
+                *last_sync = accumulated;
+
+                let _ = app_handle.emit("git-mutation", MutationPayload {
+                    insertions: total_lines.0,
+                    deletions: total_lines.1,
+                });
+                log_color_fn(
+                    "[SYSTEM]",
+                    &format!("Initial lines changed: +{} / -{}", stats.insertions, stats.deletions),
+                    "green"
+                );
+            }
+            Err(e) => log_color_fn("[ERR]", &format!("Failed to get initial diff stats: {}", e), "red"),
+        }
+
+        let (tx, mut rx) = mpsc::channel::<DebounceEventResult>(100);
+
+        let mut debouncer = match new_debouncer(
+            Duration::from_millis(500),
+            move |res: DebounceEventResult| {
+                let _ = tx.blocking_send(res);
+            },
+        ) {
+            Ok(d) => d,
+            Err(e) => {
+                log_color_fn("[ERR]", &format!("Watcher failed: {}", e), "red");
+                tokio::time::sleep(Duration::from_secs(2)).await;
+                continue;
+            }
+        };
+
+        if let Err(e) = debouncer.watcher()
+            .watch(&current_dir, RecursiveMode::Recursive)
+        {
+            log_color_fn("[ERR]", &format!("Watch failed: {}", e), "red");
+            tokio::time::sleep(Duration::from_secs(2)).await;
+            continue;
+        }
+
+        log_color_fn("[SUCCESS]", "HumanGit is now visually active.", "green");
+
+        let watcher_dir = current_dir.clone();
+        let mut last_modified_map: HashMap<std::path::PathBuf, SystemTime> = HashMap::new();
+
+        loop {
+            tokio::select! {
+                res_opt = rx.recv() => {
+                    match res_opt {
+                        Some(res) => {
+                            // Check if we should ignore events globally right now
+                            {
+                                let state = app_handle.state::<AppState>();
+                                let ignore_until = *state.ignore_events_until.lock().await;
+                                if std::time::Instant::now() < ignore_until {
                                     continue;
                                 }
                             }
-                            last_modified_map.insert(path.clone(), modified);
-                        }
-                    }
 
-                    mutated_paths.push(path);
+                            match res {
+                                Ok(events) => {
+                                    let mut mutated_paths = Vec::new();
+                                    for event in events {
+                                        let path = event.path;
+
+                                        let rel_path = match path.strip_prefix(&watcher_dir) {
+                                            Ok(relative) => relative,
+                                            Err(_) => path.as_path(),
+                                        };
+
+                                        if let ignore::Match::Ignore(_) = gitignore.matched_path_or_any_parents(rel_path, false) {
+                                            continue;
+                                        }
+                                        
+                                        // Ignore non-essential metadata changes
+                                        if let Ok(metadata) = std::fs::metadata(&path) {
+                                            if let Ok(modified) = metadata.modified() {
+                                                if let Some(last) = last_modified_map.get(&path) {
+                                                    if *last == modified {
+                                                        continue;
+                                                    }
+                                                }
+                                                last_modified_map.insert(path.clone(), modified);
+                                            }
+                                        }
+
+                                        mutated_paths.push(path);
+                                    }
+                                    
+                                    if !mutated_paths.is_empty() {
+                                        if let Err(e) = process_mutation(mutated_paths, watcher_dir.to_str().unwrap_or("."), &app_handle).await {
+                                            log_color_fn("[ERR]", &format!("Failed to process mutation: {}", e), "red");
+                                        }
+                                    }
+                                }
+                                Err(e) => log_color_fn("[ERR]", &format!("Watch error: {:?}", e), "red"),
+                            }
+                        }
+                        None => break,
+                    }
                 }
-                
-                if !mutated_paths.is_empty() {
-                    if let Err(e) = process_mutation(mutated_paths, &app_handle).await {
-                        log_color_fn("[ERR]", &format!("Failed to process mutation: {}", e), "red");
+                _ = tokio::time::sleep(Duration::from_millis(1000)) => {
+                    let state = app_handle.state::<AppState>();
+                    let current = state.current_repo_path.lock().await.clone();
+                    if current != Some(watcher_dir.clone()) {
+                        log_raw("[SYSTEM] Repository path changed, restarting watcher...");
+                        break;
                     }
                 }
             }
-            Err(e) => log_color_fn("[ERR]", &format!("Watch error: {:?}", e), "red"),
         }
     }
-
-    Ok(())
 }

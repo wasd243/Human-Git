@@ -13,6 +13,8 @@ pub mod modules {
         pub mod commit;
         pub mod push;
         pub mod run_shadow_sync;
+        pub mod init;
+        pub mod open_folder;
     }
     // Git core
     pub mod git {
@@ -37,6 +39,7 @@ pub mod modules {
 
 // 2. Import required dependencies
 use crate::modules::ui_bridge::handlers;
+use crate::modules::operations::open_folder;
 use std::sync::Arc;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -48,6 +51,7 @@ pub struct AppState {
     pub last_sync_count: Arc<Mutex<i32>>,
     pub db_conn: Pool<SqliteConnectionManager>,
     pub ignore_events_until: Arc<Mutex<Instant>>,
+    pub current_repo_path: Arc<Mutex<Option<std::path::PathBuf>>>,
 }
 
 #[tokio::main]
@@ -65,11 +69,18 @@ async fn main() -> anyhow::Result<()> {
         last_sync_count: Arc::new(Mutex::new(0)),
         db_conn,
         ignore_events_until: Arc::new(Mutex::new(Instant::now())),
+        current_repo_path: Arc::new(Mutex::new(None)),
     };
 
     tauri::Builder::default()
         .manage(app_state)
-        .invoke_handler(tauri::generate_handler![handlers::run_shadow_sync, handlers::get_initial_stats])
+        .invoke_handler(tauri::generate_handler![
+            handlers::run_shadow_sync, 
+            handlers::get_initial_stats,
+            handlers::git_init,
+            open_folder::update_repo_path,
+            open_folder::open_folder_dialog
+        ])
         .setup(|app| {
             let app_handle = app.handle().clone();
 

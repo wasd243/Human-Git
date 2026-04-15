@@ -15,8 +15,8 @@ pub struct FileStatus {
     pub path: String,
 }
 
-pub fn get_commit_history() -> io::Result<Vec<Commit>> {
-    let repo = Repository::discover(".").map_err(|e| Error::other(e.to_string()))?;
+pub fn get_commit_history(repo_path: &str) -> io::Result<Vec<Commit>> {
+    let repo = Repository::discover(repo_path).map_err(|e| Error::other(e.to_string()))?;
     let mut revwalk = repo.revwalk().map_err(|e| Error::other(e.to_string()))?;
     revwalk.set_sorting(Sort::TIME).map_err(|e| Error::other(e.to_string()))?;
     if revwalk.push_head().is_err() {
@@ -36,8 +36,8 @@ pub fn get_commit_history() -> io::Result<Vec<Commit>> {
     Ok(commits)
 }
 
-pub fn get_working_status() -> io::Result<Vec<FileStatus>> {
-    let repo = Repository::discover(".").map_err(|e| Error::other(e.to_string()))?;
+pub fn get_working_status(repo_path: &str) -> io::Result<Vec<FileStatus>> {
+    let repo = Repository::discover(repo_path).map_err(|e| Error::other(e.to_string()))?;
     let mut opts = StatusOptions::new();
     opts.include_untracked(true).recurse_untracked_dirs(true);
     let statuses_repo = repo.statuses(Some(&mut opts)).map_err(|e| Error::other(e.to_string()))?;
@@ -70,8 +70,8 @@ pub fn get_working_status() -> io::Result<Vec<FileStatus>> {
     Ok(statuses)
 }
 
-pub fn get_uncommitted_files() -> io::Result<String> {
-    let statuses = get_working_status()?;
+pub fn get_uncommitted_files(repo_path: &str) -> io::Result<String> {
+    let statuses = get_working_status(repo_path)?;
     let mut files = Vec::new();
     for status in statuses {
         files.push(status.path);
