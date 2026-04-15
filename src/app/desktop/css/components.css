@@ -126,7 +126,7 @@ button {
 
 #btn-git-init {
     position: fixed !important;
-    top: 40% !important;
+    top: 5% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     margin: 0 !important;
