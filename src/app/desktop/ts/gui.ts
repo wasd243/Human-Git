@@ -106,9 +106,6 @@ syncBtn.addEventListener("click", async () => {
 
 printLog("[HumanGit] Engine Online.");
 
-
-
-
 // --- UI Additions for Show Changes ---
 
 const refreshFileList = async () => {
