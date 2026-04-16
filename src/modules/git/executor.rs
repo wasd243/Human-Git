@@ -1,12 +1,25 @@
 use anyhow::{Context, Result};
 use git2::{Repository, Signature, StatusOptions};
+use crate::modules::operations::push::push_to_origin;
 
-/// Execute a "shadow commit" in the given repository path:
-/// - Use `git stash push -u -m "humangit-shadow-sync"` to save current uncommitted changes (including untracked files)
-/// - If there are pending changes (git status --porcelain is not empty), execute git add -A && git commit -m "[HumanGit] shadow commit" && git push (attempt)
-/// - Finally, if a stash was created earlier, execute git stash pop to restore the workspace
+
+/// Perform a lightweight "shadow commit" on the current branch:
 ///
-/// This function tries to wrap and return possible errors, but tolerates some non-fatal errors to avoid blocking the main flow.
+/// - Detects if there are any changes in the working directory (including untracked files)
+/// - Stages all changes (`git add -A`)
+/// - Creates a commit on the current branch with a predefined message
+/// - Attempts to push the commit to `origin` (best-effort, non-blocking)
+///
+/// Design goals:
+/// - Zero user interaction (no commit message required)
+/// - No branch switching
+/// - No stash usage
+/// - No working tree mutation beyond normal staging/commit behavior
+///
+/// Notes:
+/// - This is intended as a convenience feature for rapid iteration workflows
+/// - Push failures are ignored and logged, not treated as fatal errors
+/// - The commit is always attached to the current HEAD (no detached state)
 pub fn run_shadow_commit(repo_path: &str) -> Result<()> {
     let repo = Repository::discover(repo_path)
         .context("Failed to open repository")?;
@@ -61,27 +74,12 @@ pub fn run_shadow_commit(repo_path: &str) -> Result<()> {
     eprintln!("[SUCCESS] Commit created: {}", commit_id);
 
     // 6. auto push (FIXED VERSION)
-    if let Ok(mut remote) = repo.find_remote("origin") {
-        let mut push_opts = git2::PushOptions::new();
-
-        let ref_name = match repo.head() {
-            Ok(h) => match h.name() {
-                Some(n) => n.to_string(),
-                None => {
-                    eprintln!("[SHADOW][WARN] HEAD name missing");
-                    return Ok(());
-                }
-            },
-            Err(e) => {
-                eprintln!("[SHADOW][WARN] Cannot resolve HEAD: {}", e);
-                return Ok(());
-            }
-        };
-
-        let refspec = format!("{0}:{0}", ref_name);
-
-        if let Err(e) = remote.push(&[refspec], Some(&mut push_opts)) {
-            eprintln!("[SHADOW][WARN] Push failed: {}", e);
+    match push_to_origin(repo_path) {
+        Ok(msg) => {
+            eprintln!("[SUCCESS] {}", msg);
+        }
+        Err(e) => {
+            eprintln!("[SHADOW][WARN] Push failed (ignored): {}", e);
         }
     }
 
