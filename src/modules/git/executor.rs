@@ -11,7 +11,7 @@ pub fn run_shadow_commit(repo_path: &str) -> Result<()> {
     let repo = Repository::discover(repo_path)
         .context("Failed to open repository")?;
 
-    // 1. check changes (safe)
+    // 1. check changes
     let has_changes = {
         let mut opts = StatusOptions::new();
         opts.include_untracked(true)
@@ -26,21 +26,17 @@ pub fn run_shadow_commit(repo_path: &str) -> Result<()> {
         return Ok(());
     }
 
-    // 2. signature (avoid unwrap/panic risk)
+    // 2. signature
     let signature = Signature::now("HumanGit", "humangit@system.local")
-        .context("Failed to create git signature")?;
+        .context("Failed to create signature")?;
 
-    // 3. safe HEAD resolve (avoid unwrap chain panic risk)
-    let head_commit = match repo.head() {
-        Ok(head) => match head.peel_to_commit() {
-            Ok(commit) => commit,
-            Err(e) => {
-                eprintln!("[SHADOW][WARN] Failed to resolve HEAD commit: {}", e);
-                return Ok(()); // graceful exit
-            }
-        },
+    // 3. resolve HEAD commit safely
+    let head_commit = match repo.head()
+        .and_then(|h| h.peel_to_commit())
+    {
+        Ok(c) => c,
         Err(e) => {
-            eprintln!("[SHADOW][WARN] Failed to read HEAD: {}", e);
+            eprintln!("[SHADOW][WARN] Cannot resolve HEAD commit: {}", e);
             return Ok(());
         }
     };
@@ -50,10 +46,9 @@ pub fn run_shadow_commit(repo_path: &str) -> Result<()> {
     index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
     index.write()?;
 
-    let tree_id = index.write_tree()?;
-    let tree = repo.find_tree(tree_id)?;
+    let tree = repo.find_tree(index.write_tree()?)?;
 
-    // 5. commit onto current branch (safe history append)
+    // 5. commit
     let commit_id = repo.commit(
         Some("HEAD"),
         &signature,
@@ -63,19 +58,30 @@ pub fn run_shadow_commit(repo_path: &str) -> Result<()> {
         &[&head_commit],
     )?;
 
-    eprintln!("[SUCCESS] Shadow commit created: {}", commit_id);
+    eprintln!("[SUCCESS] Commit created: {}", commit_id);
 
-    // 6. optional best-effort push (no panic, no fail blocking)
+    // 6. auto push (FIXED VERSION)
     if let Ok(mut remote) = repo.find_remote("origin") {
         let mut push_opts = git2::PushOptions::new();
 
-        if let Err(e) = remote.push(
-            &["HEAD:HEAD"],
-            Some(&mut push_opts),
-        ) {
-            eprintln!("[SHADOW][WARN] Push failed (ignored): {}", e);
-        } else {
-            eprintln!("[SUCCESS] Shadow commit pushed (best-effort).");
+        let ref_name = match repo.head() {
+            Ok(h) => match h.name() {
+                Some(n) => n.to_string(),
+                None => {
+                    eprintln!("[SHADOW][WARN] HEAD name missing");
+                    return Ok(());
+                }
+            },
+            Err(e) => {
+                eprintln!("[SHADOW][WARN] Cannot resolve HEAD: {}", e);
+                return Ok(());
+            }
+        };
+
+        let refspec = format!("{0}:{0}", ref_name);
+
+        if let Err(e) = remote.push(&[refspec], Some(&mut push_opts)) {
+            eprintln!("[SHADOW][WARN] Push failed: {}", e);
         }
     }
 
