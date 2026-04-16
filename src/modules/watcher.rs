@@ -1,4 +1,4 @@
-use crate::modules::operations::run_shadow_sync::process_mutation;
+use crate::modules::operations::run_shadow_commit::process_mutation;
 use crate::modules::repo::{diff, history};
 use crate::modules::shared::utils::color::log_color;
 use crate::modules::ui_bridge::handlers::MutationPayload;

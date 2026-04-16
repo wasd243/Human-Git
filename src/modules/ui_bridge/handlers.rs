@@ -27,12 +27,12 @@ async fn get_repo_path(
 }
 
 #[tauri::command]
-pub async fn run_shadow_sync(
+pub async fn run_shadow_commit(
     state: tauri::State<'_, AppState>,
     repo_path: Option<String>,
 ) -> Result<(), String> {
     let path = get_repo_path(repo_path, &state).await;
-    executor::run_shadow_sync(&path).map_err(|e| e.to_string())
+    executor::run_shadow_commit(&path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

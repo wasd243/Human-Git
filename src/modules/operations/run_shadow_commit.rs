@@ -117,7 +117,7 @@ pub async fn process_mutation(
                     "yellow",
                 );
 
-                match executor::run_shadow_sync(repo_path) {
+                match executor::run_shadow_commit(repo_path) {
                     Ok(_) => {
                         *last_sync = accumulated;
                         let mut ignore_until = state.ignore_events_until.lock().await;

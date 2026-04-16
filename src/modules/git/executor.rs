@@ -1,60 +1,58 @@
 use anyhow::{Context, Result};
 use git2::{Repository, Signature, StatusOptions};
 
-/// Execute a "shadow sync" in the given repository path:
+/// Execute a "shadow commit" in the given repository path:
 /// - Use `git stash push -u -m "humangit-shadow-sync"` to save current uncommitted changes (including untracked files)
 /// - If there are pending changes (git status --porcelain is not empty), execute git add -A && git commit -m "[HumanGit] shadow sync" && git push (attempt)
 /// - Finally, if a stash was created earlier, execute git stash pop to restore the workspace
 ///
 /// This function tries to wrap and return possible errors, but tolerates some non-fatal errors to avoid blocking the main flow.
-pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
-    let repo = Repository::discover(repo_path).context("Failed to open repository")?;
+pub fn run_shadow_commit(repo_path: &str) -> Result<()> {
+    let repo = Repository::discover(repo_path)
+        .context("Failed to open repository")?;
 
     let current_branch = {
         let head = repo.head().context("Failed to get HEAD")?;
         head.shorthand().unwrap_or("").to_string()
     };
 
+    // Safety guard: avoid running on shadow branch itself
     if current_branch == "humangit-shadow" {
         return Err(anyhow::anyhow!(
-            "Already in shadow branch. Please switch back to develop manually first."
+            "Already on shadow branch. Please switch back to main branch first."
         ));
     }
 
     let has_changes = {
-        let mut statuses_opts = StatusOptions::new();
-        statuses_opts
-            .include_untracked(true)
+        let mut opts = StatusOptions::new();
+        opts.include_untracked(true)
             .recurse_untracked_dirs(true);
 
-        let statuses = repo.statuses(Some(&mut statuses_opts))?;
+        let statuses = repo.statuses(Some(&mut opts))?;
         !statuses.is_empty()
     };
 
     if !has_changes {
-        eprintln!("[SHADOW] No changes to archive. Reality is stable.");
+        eprintln!("[SHADOW] No changes detected. Skipping shadow commit.");
         return Ok(());
     }
 
-    eprintln!("[SHADOW] Creating snapshot on shadow branch...");
+    eprintln!("[SHADOW] Creating shadow commit checkpoint...");
 
     let signature = Signature::now("HumanGit", "humangit@system.local")?;
 
-    // 🟡 1. 只创建分支，不影响工作区
+    // Create or update shadow branch reference (no checkout)
     let head_commit = repo.head()?.peel_to_commit()?;
     repo.branch("humangit-shadow", &head_commit, true)?;
 
-    // 🟡 2. 切 HEAD（逻辑切换，不 checkout）
-    let shadow_ref = "refs/heads/humangit-shadow";
-    repo.set_head(shadow_ref)?;
+    // Move HEAD logically (does NOT modify working tree)
+    repo.set_head("refs/heads/humangit-shadow")?;
 
-    // ❌ 删除 stash（完全不需要）
-    // ❌ 删除 stash_apply / stash_pop
-
-    // 🟡 3. 创建 commit snapshot（基于 index）
+    // Create snapshot commit based on current index state
     {
         let mut index = repo.index()?;
 
+        // Stage all changes (working tree is NOT modified)
         index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
         index.write()?;
 
@@ -67,27 +65,28 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
             Some("HEAD"),
             &signature,
             &signature,
-            "[HumanGit] shadow sync checkpoint",
+            "[HumanGit] shadow commit attempt",
             &tree,
             &[&parent],
         )?;
     }
 
-    // 🟡 4. push（安全）
+    // Push shadow branch (best-effort, non-blocking)
     if let Ok(mut remote) = repo.find_remote("origin") {
         let mut push_options = git2::PushOptions::new();
+
         let _ = remote.push(
             &["refs/heads/humangit-shadow:refs/heads/humangit-shadow"],
             Some(&mut push_options),
         );
     }
 
-    // 🟡 5. 不回切工作区（关键）
-    // ❌ 删除所有 checkout / force / restore
+    // IMPORTANT: No checkout, no restore, no stash
+    // The working tree remains untouched by design
 
     if !current_branch.is_empty() {
         eprintln!(
-            "[SUCCESS] Shadow checkpoint created (SAFE MODE). Working tree untouched."
+            "[SUCCESS] Shadow commit created successfully. Working tree preserved."
         );
     }
 

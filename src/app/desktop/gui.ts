@@ -186,7 +186,7 @@ syncBtn.addEventListener("click", async () => {
     printLog("Connecting to shadow dimension...");
     try {
         // 调用 Rust 侧定义的 #[tauri::command]
-        await invoke("run_shadow_sync", { repoPath: null });
+        await invoke("run_shadow_commit", { repoPath: null });
         printLog("Checkpoint created successfully.");
     } catch (e) {
         printLog(`Error: ${e}`);
