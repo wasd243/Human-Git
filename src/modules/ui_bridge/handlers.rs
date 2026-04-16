@@ -10,29 +10,28 @@ pub struct MutationPayload {
     pub deletions: i32,
 }
 
+async fn get_repo_path(
+    repo_path: Option<String>,
+    state: &AppState,
+) -> String {
+    match repo_path {
+        Some(p) if !p.is_empty() && p != "." => p,
+        _ => {
+            let current = state.current_repo_path.lock().await;
+            current
+                .as_ref()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|| ".".to_string())
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn run_shadow_sync(
     state: tauri::State<'_, AppState>,
     repo_path: Option<String>,
 ) -> Result<(), String> {
-    let path = if let Some(p) = repo_path {
-        if p.is_empty() || p == "." {
-            let current = state.current_repo_path.lock().await;
-            current
-                .as_ref()
-                .map(|p| p.to_string_lossy().to_string())
-                .unwrap_or(".".to_string())
-        } else {
-            p
-        }
-    } else {
-        let current = state.current_repo_path.lock().await;
-        current
-            .as_ref()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or(".".to_string())
-    };
-
+    let path = get_repo_path(repo_path, &state).await;
     executor::run_shadow_sync(&path).map_err(|e| e.to_string())
 }
 
@@ -44,16 +43,14 @@ pub async fn git_init(repo_path: String) -> Result<String, String> {
 #[tauri::command]
 pub async fn get_initial_stats(
     state: tauri::State<'_, AppState>,
+    repo_path: Option<String>,
 ) -> Result<MutationPayload, String> {
-    let repo_path = {
-        let current = state.current_repo_path.lock().await;
-        current
-            .as_ref()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or(".".to_string())
-    };
+    let path = get_repo_path(repo_path, &state).await;
 
-    let stats = tokio::task::spawn_blocking(move || diff::get_stats(&repo_path))
+    let stats = tokio::task::spawn_blocking({
+        let path = path.clone();
+        move || diff::get_stats(&path)
+    })
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())?;
@@ -75,15 +72,8 @@ pub async fn stage_files(
     state: tauri::State<'_, AppState>,
     paths: Vec<String>,
 ) -> Result<String, String> {
-    let repo_path = {
-        let current = state.current_repo_path.lock().await;
-        current
-            .as_ref()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or(".".to_string())
-    };
-
-    add::stage_files(&repo_path, paths).map_err(|e| e.to_string())
+    let path = get_repo_path(None, &state).await;
+    add::stage_files(&path, paths).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
