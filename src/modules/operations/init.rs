@@ -1,13 +1,13 @@
+use anyhow::{anyhow, Result};
 use git2::{Repository, Signature};
-use std::path::Path;
-use anyhow::{Result, anyhow};
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 
 /// Initializes a new Git repository at the specified path and creates an initial commit.
 pub fn init_repo(path: &str) -> Result<String> {
     let repo_path = Path::new(path);
-    
+
     // Check if .git exists to avoid re-initialization error
     if repo_path.join(".git").exists() {
         return Err(anyhow!("Repository already exists in this directory."));
@@ -34,13 +34,13 @@ pub fn init_repo(path: &str) -> Result<String> {
     index.add_path(Path::new("README.md"))?;
     index.add_path(Path::new(".gitignore"))?;
     index.write()?;
-    
+
     let oid = index.write_tree()?;
     let tree = repo.find_tree(oid)?;
-    
+
     // Create a signature
     let signature = Signature::now("HumanGit", "humangit@example.com")?;
-    
+
     repo.commit(
         Some("HEAD"),
         &signature,

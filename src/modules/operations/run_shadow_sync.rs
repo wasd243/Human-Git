@@ -1,11 +1,15 @@
-use crate::modules::repo::{diff, history};
 use crate::modules::git::executor;
+use crate::modules::repo::{diff, history};
 use crate::modules::ui_bridge::handlers::MutationPayload;
 use crate::AppState;
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter, Manager};
 
-pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: &AppHandle) -> anyhow::Result<()> {
+pub async fn process_mutation(
+    paths: Vec<PathBuf>,
+    repo_path: &str,
+    app_handle: &AppHandle,
+) -> anyhow::Result<()> {
     let log_raw = |msg: &str| {
         println!("{}", msg);
         let _ = app_handle.emit("log-event", msg.to_string());
@@ -33,7 +37,7 @@ pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: 
         }
         Err(_) => String::new(),
     };
-    
+
     if !status_msg.is_empty() {
         log_color_fn("[GIT]", &format!("Status:\n{}", status_msg), "cyan");
     }
@@ -41,11 +45,15 @@ pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: 
     match history::get_working_status(repo_path) {
         Ok(statuses) => {
             let has_changes = history::has_changes(&statuses);
-            log_color_fn("[REPO]", &format!("Has changes: {}", has_changes), "magenta");
+            log_color_fn(
+                "[REPO]",
+                &format!("Has changes: {}", has_changes),
+                "magenta",
+            );
             for status in statuses {
                 log_raw(&format!("  [{} {}] {}", status.x, status.y, status.path));
             }
-            
+
             if has_changes {
                 if let Ok(files) = history::get_uncommitted_files(repo_path) {
                     if !files.is_empty() {
@@ -57,7 +65,11 @@ pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: 
                 }
             }
         }
-        Err(e) => log_color_fn("[ERR]", &format!("Failed to get working status: {}", e), "red"),
+        Err(e) => log_color_fn(
+            "[ERR]",
+            &format!("Failed to get working status: {}", e),
+            "red",
+        ),
     }
 
     match diff::get_stats(repo_path) {
@@ -66,14 +78,17 @@ pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: 
 
             let state = app_handle.state::<AppState>();
             let mut total_lines = state.total_lines.lock().await;
-            
+
             total_lines.0 = stats.insertions;
             total_lines.1 = stats.deletions;
 
-            let _ = app_handle.emit("git-mutation", MutationPayload {
-                insertions: total_lines.0,
-                deletions: total_lines.1,
-            });
+            let _ = app_handle.emit(
+                "git-mutation",
+                MutationPayload {
+                    insertions: total_lines.0,
+                    deletions: total_lines.1,
+                },
+            );
 
             log_color_fn(
                 "[SYSTEM]",
@@ -106,23 +121,22 @@ pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: 
                     Ok(_) => {
                         *last_sync = accumulated;
                         let mut ignore_until = state.ignore_events_until.lock().await;
-                        *ignore_until = std::time::Instant::now() + std::time::Duration::from_millis(1500);
+                        *ignore_until =
+                            std::time::Instant::now() + std::time::Duration::from_millis(1500);
                         log_color_fn("[SYSTEM]", "Shadow sync finished successfully.", "green");
                     }
                     Err(e) => {
                         eprintln!("[ERR] Shadow sync failed: {}", e);
-                        let _ = app_handle.emit("log-event", format!("[ERR] Shadow sync failed: {}", e));
+                        let _ = app_handle
+                            .emit("log-event", format!("[ERR] Shadow sync failed: {}", e));
                     }
                 }
             }
-            
+
             if let Ok(db_conn) = state.db_conn.get() {
                 let _ = db_conn.execute(
                     "INSERT INTO shadow_history (file_path, diff_stats) VALUES (?1, ?2)",
-                    (
-                        format!("{:?}", paths),
-                        status_msg,
-                    ),
+                    (format!("{:?}", paths), status_msg),
                 );
             } else {
                 eprintln!("[ERR] Failed to acquire DB connection from pool");
@@ -130,9 +144,12 @@ pub async fn process_mutation(paths: Vec<PathBuf>, repo_path: &str, app_handle: 
         }
         Err(e) => {
             eprintln!("[ERR] Failed to compute diff stats: {}", e);
-            let _ = app_handle.emit("log-event", format!("[ERR] Failed to compute diff stats: {}", e));
+            let _ = app_handle.emit(
+                "log-event",
+                format!("[ERR] Failed to compute diff stats: {}", e),
+            );
         }
     }
-    
+
     Ok(())
 }

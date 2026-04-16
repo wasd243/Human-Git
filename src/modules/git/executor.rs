@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use git2::{Repository, Signature, StatusOptions, StashFlags};
+use git2::{Repository, Signature, StashFlags, StatusOptions};
 
 /// Execute a "shadow sync" in the given repository path:
 /// - Use `git stash push -u -m "humangit-shadow-sync"` to save current uncommitted changes (including untracked files)
@@ -16,12 +16,16 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     };
 
     if current_branch == "humangit-shadow" {
-        return Err(anyhow::anyhow!("Already in shadow branch. Please switch back to develop manually first."));
+        return Err(anyhow::anyhow!(
+            "Already in shadow branch. Please switch back to develop manually first."
+        ));
     }
 
     let has_changes = {
         let mut statuses_opts = StatusOptions::new();
-        statuses_opts.include_untracked(true).recurse_untracked_dirs(true);
+        statuses_opts
+            .include_untracked(true)
+            .recurse_untracked_dirs(true);
         let statuses = repo.statuses(Some(&mut statuses_opts))?;
         !statuses.is_empty()
     };
@@ -36,9 +40,13 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     let signature = Signature::now("HumanGit", "humangit@system.local")?;
 
     let mut stashed = false;
-    match repo.stash_save(&signature, "humangit-shadow-sync", Some(StashFlags::INCLUDE_UNTRACKED)) {
+    match repo.stash_save(
+        &signature,
+        "humangit-shadow-sync",
+        Some(StashFlags::INCLUDE_UNTRACKED),
+    ) {
         Ok(_) => stashed = true,
-        Err(e) if e.code() == git2::ErrorCode::NotFound => {},
+        Err(e) if e.code() == git2::ErrorCode::NotFound => {}
         Err(e) => return Err(e.into()),
     }
 
@@ -46,7 +54,11 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     let shadow_ref_name = {
         let commit = repo.head()?.peel_to_commit()?;
         let shadow_branch = repo.branch("humangit-shadow", &commit, true)?;
-        shadow_branch.get().name().context("Failed to get shadow branch name")?.to_string()
+        shadow_branch
+            .get()
+            .name()
+            .context("Failed to get shadow branch name")?
+            .to_string()
     };
     repo.set_head(&shadow_ref_name)?;
     repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
@@ -57,16 +69,16 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
             eprintln!("[ERR] Failed to apply stash to shadow branch: {}", e);
         }
     }
-    
+
     {
         let mut index = repo.index()?;
         index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
         index.write()?;
         let tree_id = index.write_tree()?;
         let tree = repo.find_tree(tree_id)?;
-        
+
         let parent_commit = repo.head()?.peel_to_commit()?;
-        
+
         let _ = repo.commit(
             Some("HEAD"),
             &signature,
@@ -80,7 +92,10 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     // 5) Try to Push (optional, will fail if no upstream but that's fine)
     if let Ok(mut remote) = repo.find_remote("origin") {
         let mut push_options = git2::PushOptions::new();
-        let _ = remote.push(&["refs/heads/humangit-shadow:refs/heads/humangit-shadow"], Some(&mut push_options));
+        let _ = remote.push(
+            &["refs/heads/humangit-shadow:refs/heads/humangit-shadow"],
+            Some(&mut push_options),
+        );
     }
 
     // 6) Return to original dimension
@@ -92,7 +107,10 @@ pub fn run_shadow_sync(repo_path: &str) -> Result<()> {
     if stashed {
         match repo.stash_pop(0, None) {
             Ok(_) => eprintln!("[SUCCESS] Shadow checkpoint created. IDE markers preserved."),
-            Err(e) => eprintln!("[ERR] Shadow checkpoint created but stash pop failed: {}", e),
+            Err(e) => eprintln!(
+                "[ERR] Shadow checkpoint created but stash pop failed: {}",
+                e
+            ),
         }
     } else {
         eprintln!("[SUCCESS] Shadow checkpoint created. IDE markers preserved.");

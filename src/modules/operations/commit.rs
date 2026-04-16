@@ -1,5 +1,5 @@
-use git2::{Repository, Signature, Config};
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
+use git2::{Config, Repository, Signature};
 
 /// Creates a commit with the current index contents.
 pub fn commit_changes(repo_path: &str, message: &str) -> Result<String> {
@@ -10,11 +10,13 @@ pub fn commit_changes(repo_path: &str, message: &str) -> Result<String> {
 
     // Get user signature from Git config
     let config = Config::open_default().context("Failed to open Git config")?;
-    let name = config.get_string("user.name")
+    let name = config
+        .get_string("user.name")
         .unwrap_or_else(|_| "HumanGit".to_string());
-    let email = config.get_string("user.email")
+    let email = config
+        .get_string("user.email")
         .unwrap_or_else(|_| "humangit@system.local".to_string());
-    
+
     let signature = Signature::now(&name, &email)?;
 
     // Get parent commit(s)

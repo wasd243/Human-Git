@@ -1,14 +1,14 @@
 use crate::modules::operations::run_shadow_sync::process_mutation;
+use crate::modules::repo::{diff, history};
 use crate::modules::shared::utils::color::log_color;
-use crate::modules::repo::{history, diff};
 use crate::modules::ui_bridge::handlers::MutationPayload;
+use crate::AppState;
 use ignore::gitignore::GitignoreBuilder;
 use notify_debouncer_mini::{new_debouncer, notify::RecursiveMode, DebounceEventResult};
-use std::time::{Duration, SystemTime};
 use std::collections::HashMap;
+use std::time::{Duration, SystemTime};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
-use crate::AppState;
 
 pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
     let log_raw = |msg: &str| {
@@ -79,7 +79,12 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                 log_raw("--------------------------------------------------");
                 log_color_fn("[GIT]", "Recent Commit History:", "cyan");
                 for commit in commits.iter().take(5) {
-                    log_raw(&format!("  [{}] {} (Parents: {})", commit.hash, commit.message, commit.parents.join(", ")));
+                    log_raw(&format!(
+                        "  [{}] {} (Parents: {})",
+                        commit.hash,
+                        commit.message,
+                        commit.parents.join(", ")
+                    ));
                 }
             }
             Err(e) => log_color_fn("[ERR]", &format!("Failed to get history: {}", e), "red"),
@@ -90,24 +95,42 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                 let has_changes = history::has_changes(&statuses);
                 if has_changes {
                     log_raw("--------------------------------------------------");
-                    log_color_fn("[REPO]", &format!("Current Working Status (Has changes: {})", has_changes), "magenta");
+                    log_color_fn(
+                        "[REPO]",
+                        &format!("Current Working Status (Has changes: {})", has_changes),
+                        "magenta",
+                    );
                     for status in statuses {
                         log_raw(&format!("  [{} {}] {}", status.x, status.y, status.path));
                     }
 
-                    if let Ok(files) = history::get_uncommitted_files(current_dir.to_str().unwrap_or(".")) {
+                    if let Ok(files) =
+                        history::get_uncommitted_files(current_dir.to_str().unwrap_or("."))
+                    {
                         if !files.is_empty() {
-                            log_color_fn("[FILES]", "Uncommitted changed files at startup:", "yellow");
+                            log_color_fn(
+                                "[FILES]",
+                                "Uncommitted changed files at startup:",
+                                "yellow",
+                            );
                             for file in files.lines() {
                                 log_raw(&format!("    {}", file));
                             }
                         }
                     }
                 } else {
-                    log_color_fn("[REPO]", "Clean workspace: No uncommitted changes.", "green");
+                    log_color_fn(
+                        "[REPO]",
+                        "Clean workspace: No uncommitted changes.",
+                        "green",
+                    );
                 }
             }
-            Err(e) => log_color_fn("[ERR]", &format!("Failed to get working status: {}", e), "red"),
+            Err(e) => log_color_fn(
+                "[ERR]",
+                &format!("Failed to get working status: {}", e),
+                "red",
+            ),
         }
 
         match diff::get_stats(current_dir.to_str().unwrap_or(".")) {
@@ -121,17 +144,27 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                 let mut last_sync = state.last_sync_count.lock().await;
                 *last_sync = accumulated;
 
-                let _ = app_handle.emit("git-mutation", MutationPayload {
-                    insertions: total_lines.0,
-                    deletions: total_lines.1,
-                });
+                let _ = app_handle.emit(
+                    "git-mutation",
+                    MutationPayload {
+                        insertions: total_lines.0,
+                        deletions: total_lines.1,
+                    },
+                );
                 log_color_fn(
                     "[SYSTEM]",
-                    &format!("Initial lines changed: +{} / -{}", stats.insertions, stats.deletions),
-                    "green"
+                    &format!(
+                        "Initial lines changed: +{} / -{}",
+                        stats.insertions, stats.deletions
+                    ),
+                    "green",
                 );
             }
-            Err(e) => log_color_fn("[ERR]", &format!("Failed to get initial diff stats: {}", e), "red"),
+            Err(e) => log_color_fn(
+                "[ERR]",
+                &format!("Failed to get initial diff stats: {}", e),
+                "red",
+            ),
         }
 
         let (tx, mut rx) = mpsc::channel::<DebounceEventResult>(100);
@@ -150,7 +183,8 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
             }
         };
 
-        if let Err(e) = debouncer.watcher()
+        if let Err(e) = debouncer
+            .watcher()
             .watch(&current_dir, RecursiveMode::Recursive)
         {
             log_color_fn("[ERR]", &format!("Watch failed: {}", e), "red");
@@ -191,7 +225,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                                         if let ignore::Match::Ignore(_) = gitignore.matched_path_or_any_parents(rel_path, false) {
                                             continue;
                                         }
-                                        
+
                                         // Ignore non-essential metadata changes
                                         if let Ok(metadata) = std::fs::metadata(&path) {
                                             if let Ok(modified) = metadata.modified() {
@@ -206,7 +240,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
 
                                         mutated_paths.push(path);
                                     }
-                                    
+
                                     if !mutated_paths.is_empty() {
                                         if let Err(e) = process_mutation(mutated_paths, watcher_dir.to_str().unwrap_or("."), &app_handle).await {
                                             log_color_fn("[ERR]", &format!("Failed to process mutation: {}", e), "red");

@@ -1,11 +1,10 @@
 use anyhow::{Context, Result};
-use git2::{Config, ErrorCode, IndexAddOption, PushOptions, RemoteCallbacks, Repository, Signature};
+use git2::{Config, ErrorCode, PushOptions, RemoteCallbacks, Repository, Signature};
+
+use crate::modules::operations::add::stage_all_changes;
 
 fn default_commit_message() -> String {
-    format!(
-        "HumanGit quick deploy {}",
-        chrono_like_timestamp()
-    )
+    format!("HumanGit quick deploy {}", chrono_like_timestamp())
 }
 
 fn chrono_like_timestamp() -> String {
@@ -83,13 +82,13 @@ pub fn commit_and_push(repo_path: &str, message: Option<&str>) -> Result<String>
     let repo = Repository::discover(repo_path).context("Failed to open repository")?;
 
     let mut index = repo.index().context("Failed to open Git index")?;
-    index
-        .add_all(["*"].iter(), IndexAddOption::DEFAULT, None)
-        .context("Failed to stage changes")?;
+    stage_all_changes(&mut index).context("Failed to stage changes")?;
     index.write().context("Failed to write staged changes")?;
 
     let tree_id = index.write_tree().context("Failed to write tree")?;
-    let tree = repo.find_tree(tree_id).context("Failed to find written tree")?;
+    let tree = repo
+        .find_tree(tree_id)
+        .context("Failed to find written tree")?;
     let signature = build_signature(&repo)?;
 
     let mut parents = Vec::new();

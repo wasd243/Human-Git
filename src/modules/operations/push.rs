@@ -1,9 +1,11 @@
-use git2::{Repository, RemoteCallbacks, PushOptions, Cred, CredentialType};
-use anyhow::{Result, Context, anyhow};
+use anyhow::{anyhow, Context, Result};
+use git2::{Cred, CredentialType, PushOptions, RemoteCallbacks, Repository};
 
 pub fn push_to_origin(repo_path: &str) -> Result<String> {
     let repo = Repository::discover(repo_path).context("Failed to open repository")?;
-    let mut remote = repo.find_remote("origin").context("Remote 'origin' not found")?;
+    let mut remote = repo
+        .find_remote("origin")
+        .context("Remote 'origin' not found")?;
     let head = repo.head().context("Failed to resolve HEAD")?;
     let branch_name = head
         .shorthand()

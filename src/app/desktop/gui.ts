@@ -35,6 +35,7 @@ const btnQuickDeploy = document.getElementById("btn-quick-deploy") as HTMLButton
 const btnCommit = document.getElementById("btn-commit")!;
 const btnPush = document.getElementById("btn-push")!;
 const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
+let activeRepoPath = ".";
 // 找到全屏背景层
 const bgCanvas = document.getElementById("千里江山图")!;
 
@@ -149,6 +150,16 @@ const printLog = (msg: string) => {
     isInitialized = true;
 };
 
+const setStats = (stats: MutationPayload) => {
+    insEl.textContent = stats.insertions.toString();
+    delEl.textContent = stats.deletions.toString();
+};
+
+const resetStats = () => {
+    insEl.textContent = "0";
+    delEl.textContent = "0";
+};
+
 // --- 核心逻辑 ---
 
 // 0. 监听通用日志事件
@@ -159,15 +170,13 @@ listen<string>("log-event", (event) => {
 // 1. 监听 Rust 侧的变动广播
 listen<MutationPayload>("git-mutation", (event) => {
     const {insertions, deletions} = event.payload;
-    insEl.textContent = insertions.toString();
-    delEl.textContent = deletions.toString();
+    setStats({insertions, deletions});
     printLog(`Detected movement: +${insertions} / -${deletions}`);
 });
 
 // 1.5 Fetch initial stats right after UI loads
 invoke<MutationPayload>("get_initial_stats").then((payload) => {
-    insEl.textContent = payload.insertions.toString();
-    delEl.textContent = payload.deletions.toString();
+    setStats(payload);
 }).catch((e) => {
     printLog(`[ERR] Failed to fetch initial stats: ${e}`);
 });
@@ -230,6 +239,7 @@ const refreshFileList = async () => {
             fileListEl.appendChild(div);
         });
     } catch (e) {
+        fileListEl.innerHTML = "";
         btnQuickDeploy.disabled = true;
         printLog(`[ERR] Failed to fetch file status: ${e}`);
     }
@@ -341,10 +351,12 @@ btnCloseBottomUI.addEventListener("click", () => {
 });
 
 btnDoGitInit.addEventListener("click", async () => {
-    printLog("[GIT] Initializing repository...");
+    printLog(`[GIT] Initializing repository in ${activeRepoPath}...`);
     try {
-        const result = await invoke<string>("git_init", { repoPath: "." });
+        const result = await invoke<string>("git_init", { repoPath: activeRepoPath });
         printLog(`[SUCCESS] ${result}`);
+        const stats = await invoke<MutationPayload>("get_initial_stats");
+        setStats(stats);
     } catch (e) {
         printLog(`[ERR] ${e}`);
     }
@@ -356,24 +368,22 @@ btnChooseFolder.addEventListener("click", async () => {
         const path = await invoke<string | null>("open_folder_dialog");
         if (path) {
             printLog(`[SYSTEM] Folder selected: ${path}`);
-            
-            // 1. Initialize repository
-            printLog("[GIT] Initializing repository in selected folder...");
-            try {
-                const initResult = await invoke<string>("git_init", { repoPath: path });
-                printLog(`[SUCCESS] git init succeed: ${initResult}`);
-            } catch (initErr) {
-                printLog(`[ERR] git init failed: ${initErr}`);
-            }
-            
-            // 2. Activate the listener and refresh cache/stats
+
+            // 1. Activate the listener and refresh cache/stats
             await invoke("update_repo_path", { path: path });
+            activeRepoPath = path;
+            fileListEl.innerHTML = "";
+            btnQuickDeploy.disabled = true;
             printLog(`[SYSTEM] Monitoring switched to: ${path}`);
 
-            // 3. Refresh UI stats
-            const stats = await invoke<MutationPayload>("get_initial_stats");
-            insEl.textContent = stats.insertions.toString();
-            delEl.textContent = stats.deletions.toString();
+            // 2. Refresh UI stats only if the selected folder is already a repo.
+            try {
+                const stats = await invoke<MutationPayload>("get_initial_stats");
+                setStats(stats);
+            } catch (_statsErr) {
+                resetStats();
+                printLog("[SYSTEM] Selected folder is not a Git repository yet.");
+            }
         } else {
             printLog("[SYSTEM] Folder selection cancelled.");
         }
