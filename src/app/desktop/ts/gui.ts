@@ -4,6 +4,7 @@ import "../css/components.css";
 import "../css/panels.css";
 
 import {backgroundAnimation} from "./modules/background";
+import {leftUI} from "./modules/leftUI";
 
 // 定义一个简单的结构体，对应 Rust 发过来的数据
 interface MutationPayload {
@@ -106,23 +107,7 @@ syncBtn.addEventListener("click", async () => {
 printLog("[HumanGit] Engine Online.");
 
 
-// --- UI Additions for SHADOW_SYNC ---
-const triggerBtn = document.createElement("button");
-triggerBtn.id = "top-left-sync-btn";
-triggerBtn.innerHTML = `<span class="gear-icon">⚙</span>`;
-document.body.appendChild(triggerBtn);
 
-const leftUI = document.createElement("div");
-leftUI.id = "left-ui";
-document.body.appendChild(leftUI);
-
-// Move the original sync button into the new UI
-leftUI.appendChild(syncBtn);
-
-// Interactions
-triggerBtn.addEventListener("click", () => {
-    leftUI.classList.toggle("show");
-});
 
 // --- UI Additions for Show Changes ---
 
@@ -303,3 +288,4 @@ btnChooseFolder.addEventListener("click", async () => {
 });
 
 backgroundAnimation();
+leftUI();
