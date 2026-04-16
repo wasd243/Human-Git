@@ -15,7 +15,7 @@ pub mod modules {
         pub mod init;
         pub mod open_folder;
         pub mod push;
-        pub mod run_shadow_sync;
+        pub mod run_shadow_commit;
     }
     // Git core
     pub mod git {
@@ -76,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
     tauri::Builder::default()
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
-            handlers::run_shadow_sync,
+            handlers::run_shadow_commit,
             handlers::get_initial_stats,
             handlers::git_init,
             handlers::stage_files,
