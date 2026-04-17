@@ -5,6 +5,7 @@ import "../css/panels.css";
 
 import {backgroundAnimation} from "./modules/background";
 import {leftUI} from "./modules/leftUI";
+import {printLog} from "./modules/log";
 
 // 定义一个简单的结构体，对应 Rust 发过来的数据
 interface MutationPayload {
@@ -21,7 +22,7 @@ interface FileStatus {
 // 找到那些显示数字的元素
 const insEl = document.getElementById("ins-value")!;
 const delEl = document.getElementById("del-value")!;
-const consoleEl = document.getElementById("console-output")!;
+
 const syncBtn = document.getElementById("btn-sync")!;
 const btnShowChanges = document.getElementById("btn-show-changes")!;
 const btnGitInit = document.getElementById("btn-git-init")!;
@@ -40,26 +41,6 @@ const btnPush = document.getElementById("btn-push")!;
 const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
 let activeRepoPath = ".";
 
-const bgCanvas = document.getElementById("千里江山图")!;
-let isInitialized = false;
-
-// 打印日志到界面上
-const printLog = (msg: string) => {
-    const p = document.createElement("p");
-
-    // 简单的日志染色解析逻辑 (复用之前的设计思路)
-    if (msg.startsWith("[SYSTEM]")) p.className = "log-system";
-    else if (msg.startsWith("[ERR]")) p.className = "log-err";
-    else if (msg.startsWith("[GIT]")) p.className = "log-git";
-    else if (msg.startsWith("[SUCCESS]")) p.className = "log-success";
-    else if (msg.startsWith("[EVENT]")) p.className = "log-event";
-
-    p.textContent = `> ${msg}`;
-    consoleEl.prepend(p);
-
-    bgCanvas.classList.add("engine-active");
-    isInitialized = true;
-};
 
 const setStats = (stats: MutationPayload) => {
     insEl.textContent = stats.insertions.toString();
