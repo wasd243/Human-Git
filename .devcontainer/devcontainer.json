@@ -1,0 +1,33 @@
+{
+  "name": "HumanGit Dev Environment",
+
+  "image": "mcr.microsoft.com/devcontainers/rust:1-1-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+
+"postCreateCommand": [
+    "sudo apt-get update",
+    "sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf pkg-config build-essential curl",
+    "cargo install tauri-cli",
+    "rustup update"
+  ],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tauri-apps.tauri-vscode",
+        "vadimcn.vscode-lldb",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  },
+
+  "forwardPorts": [1420, 5173],
+
+  "remoteUser": "vscode"
+}
