@@ -17,6 +17,7 @@ target/
 # Develop
 node_modules/
 gen/schemas/
+dist/
 
 # 屏蔽 Tauri 自动生成的移动端资源
 src-tauri/gen/android/

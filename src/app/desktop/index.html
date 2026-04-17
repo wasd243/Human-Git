@@ -10,17 +10,36 @@
 <div id="千里江山图"></div>
 <main id="app-container">
 
+    <button id="btn-git-init" class="human-git-main-btn">Find a Repo</button>
     <button id="btn-show-changes" class="human-git-main-btn">Show Changes</button>
 
     <div id="console-output"></div>
 
     <nav class="controls">
-        <button id="btn-sync">Shadow Sync</button>
+        <button id="btn-sync">Shadow Commit</button>
     </nav>
 </main>
 
 <div id="top-ui" class="top-ui">
     <button id="btn-close-top-ui" class="close-btn">✕</button>
+    
+    <div id="file-staging-area">
+        <div id="file-list"></div>
+        <div class="staging-buttons">
+            <button id="btn-stage-selected" class="human-git-main-btn stage-btn">Stage Selected</button>
+            <button id="btn-stage-all" class="human-git-main-btn stage-btn">Stage All</button>
+        </div>
+    </div>
+
+    <div id="commit-push-area">
+        <textarea id="commit-message" placeholder="Type your commit message here..."></textarea>
+        <div class="commit-push-buttons">
+            <button id="btn-quick-deploy" class="human-git-main-btn quick-deploy-btn" disabled>Quick Deploy</button>
+            <button id="btn-commit" class="human-git-main-btn commit-btn">Commit</button>
+            <button id="btn-push" class="human-git-main-btn push-btn">Push</button>
+        </div>
+    </div>
+
     <div class="monitor-panel">
         <div class="data-node">
             <span class="label">INS</span>
@@ -33,6 +52,13 @@
     </div>
 </div>
 
-<script type="module" src="gui.ts"></script>
+<div id="bottom-ui" class="bottom-ui">
+    <button id="btn-close-bottom-ui" class="close-btn">✕</button>
+    <button id="btn-choose-folder" class="human-git-main-btn choose-folder-btn">Choose your folder</button>
+    <button id="btn-do-git-init" class="human-git-main-btn init-action-btn">Initialize Repository</button>
+</div>
+
+
+<script type="module" src="ts/gui.ts"></script>
 </body>
 </html>
