@@ -275,6 +275,6 @@ btnChooseFolder.addEventListener("click", async () => {
 
 backgroundAnimation();
 leftUI();
-// setInterval(async () => {
-//     await refreshFileList();
-// }, 5000);
+setInterval(async () => {
+    await refreshFileList();
+}, 1000);
