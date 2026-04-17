@@ -119,8 +119,8 @@ const refreshFileList = async () => {
 };
 
 // 在 refreshFileList 函数定义之后添加
-listen("files-changed", () => {
-    // 只有在 topUI 面板当前可见时才刷新，避免后台静默刷新干扰用户
+listen<boolean>("files-changed", () => {
+    printLog("[SYSTEM] File change detected, refreshing list...");
     if (topUI.classList.contains("show")) {
         refreshFileList();
     }
@@ -275,3 +275,6 @@ btnChooseFolder.addEventListener("click", async () => {
 
 backgroundAnimation();
 leftUI();
+// setInterval(async () => {
+//     await refreshFileList();
+// }, 5000);
