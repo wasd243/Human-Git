@@ -242,8 +242,13 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                                     }
 
                                     if !mutated_paths.is_empty() {
-                                        if let Err(e) = process_mutation(mutated_paths, watcher_dir.to_str().unwrap_or("."), &app_handle).await {
-                                            log_color_fn("[ERR]", &format!("Failed to process mutation: {}", e), "red");
+                                        match process_mutation(mutated_paths, watcher_dir.to_str().unwrap_or("."), &app_handle).await {
+                                            Err(e) => {
+                                                log_color_fn("[ERR]", &format!("Failed to process mutation: {}", e), "red");
+                                            }
+                                            Ok(_) => {
+                                                let _ = app_handle.emit("files-changed", ());
+                                            }
                                         }
                                     }
                                 }
