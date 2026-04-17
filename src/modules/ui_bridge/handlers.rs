@@ -81,15 +81,9 @@ pub async fn commit_changes(
     state: tauri::State<'_, AppState>,
     message: String,
 ) -> Result<String, String> {
-    let repo_path = {
-        let current = state.current_repo_path.lock().await;
-        current
-            .as_ref()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or(".".to_string())
-    };
+    let path = get_repo_path(None, &state).await;
 
-    tokio::task::spawn_blocking(move || commit::commit_changes(&repo_path, &message))
+    tokio::task::spawn_blocking(move || commit::commit_changes(&path, &message))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
@@ -97,15 +91,9 @@ pub async fn commit_changes(
 
 #[tauri::command]
 pub async fn push_changes(state: tauri::State<'_, AppState>) -> Result<String, String> {
-    let repo_path = {
-        let current = state.current_repo_path.lock().await;
-        current
-            .as_ref()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or(".".to_string())
-    };
+    let path = get_repo_path(None, &state).await;
 
-    tokio::task::spawn_blocking(move || push::push_to_origin(&repo_path))
+    tokio::task::spawn_blocking(move || push::push_to_origin(&path))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
@@ -116,16 +104,10 @@ pub async fn commit_and_push(
     state: tauri::State<'_, AppState>,
     message: Option<String>,
 ) -> Result<String, String> {
-    let repo_path = {
-        let current = state.current_repo_path.lock().await;
-        current
-            .as_ref()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or(".".to_string())
-    };
+    let path = get_repo_path(None, &state).await;
 
     tokio::task::spawn_blocking(move || {
-        quick_deploy::commit_and_push(&repo_path, message.as_deref())
+        quick_deploy::commit_and_push(&path, message.as_deref())
     })
     .await
     .map_err(|e| e.to_string())?
