@@ -46,6 +46,9 @@ const stagedTitleEl = document.createElement("div");
 const stagedListEl = document.createElement("div");
 let activeRepoPath = ".";
 
+// 记录当前用户在 unstaged 列表里选择的文件，避免刷新导致选择丢失
+const selectedUnstagedPaths = new Set<string>();
+
 stagedSectionEl.id = "staged-files-section";
 stagedTitleEl.id = "staged-files-title";
 stagedListEl.id = "staged-file-list";
@@ -71,6 +74,24 @@ const setStats = (stats: MutationPayload) => {
 const resetStats = () => {
     insEl.textContent = "0";
     delEl.textContent = "0";
+};
+
+const updateSelectedPath = (path: string, checked: boolean) => {
+    if (checked) {
+        selectedUnstagedPaths.add(path);
+    } else {
+        selectedUnstagedPaths.delete(path);
+    }
+};
+
+const captureSelectionFromDom = () => {
+    const checkedBoxes = fileListEl.querySelectorAll('input[type="checkbox"]:checked');
+    checkedBoxes.forEach((cb) => {
+        const path = (cb as HTMLInputElement).dataset.path;
+        if (path) {
+            selectedUnstagedPaths.add(path);
+        }
+    });
 };
 
 // --- 核心逻辑 ---
@@ -112,9 +133,20 @@ printLog("[HumanGit] Engine Online.");
 
 const refreshFileList = async () => {
     try {
+        // 刷新前先抓取当前 DOM 的勾选状态，避免被重建列表时丢失
+        captureSelectionFromDom();
+
         const files = await invoke<FileStatus[]>("get_working_status");
         const stagedFiles = files.filter(isStagedFile);
         const unstagedFiles = files.filter(file => !isStagedFile(file));
+
+        // 清理已不存在于 unstaged 的选择，防止选择缓存无限残留
+        const unstagedPathSet = new Set(unstagedFiles.map(file => file.path));
+        Array.from(selectedUnstagedPaths).forEach(path => {
+            if (!unstagedPathSet.has(path)) {
+                selectedUnstagedPaths.delete(path);
+            }
+        });
 
         fileListEl.innerHTML = "";
         stagedListEl.innerHTML = "";
@@ -132,12 +164,21 @@ const refreshFileList = async () => {
                 <span class="file-status">[${file.x}${file.y}]</span>
                 <span class="file-path">${file.path}</span>
             `;
+
+            const checkbox = div.querySelector("input") as HTMLInputElement;
+            checkbox.checked = selectedUnstagedPaths.has(file.path);
+
+            checkbox.addEventListener("change", () => {
+                updateSelectedPath(file.path, checkbox.checked);
+            });
+
             div.addEventListener("click", (e) => {
-                if ((e.target as HTMLElement).tagName !== 'INPUT') {
-                    const checkbox = div.querySelector('input')!;
+                if ((e.target as HTMLElement).tagName !== "INPUT") {
                     checkbox.checked = !checkbox.checked;
+                    updateSelectedPath(file.path, checkbox.checked);
                 }
             });
+
             fileListEl.appendChild(div);
         });
 
@@ -185,9 +226,8 @@ btnCloseTopUI.addEventListener("click", () => {
 });
 
 btnStageSelected.addEventListener("click", async () => {
-    const checkboxes = fileListEl.querySelectorAll('input[type="checkbox"]:checked');
-    const paths = Array.from(checkboxes).map(cb => (cb as HTMLInputElement).dataset.path!);
-    
+    const paths = Array.from(selectedUnstagedPaths);
+
     if (paths.length === 0) {
         printLog("[SYSTEM] No files selected for staging.");
         return;
@@ -196,6 +236,7 @@ btnStageSelected.addEventListener("click", async () => {
     try {
         const result = await invoke<string>("stage_files", { paths });
         printLog(`[SUCCESS] ${result}`);
+        selectedUnstagedPaths.clear();
         await refreshFileList();
     } catch (e) {
         printLog(`[ERR] ${e}`);
@@ -206,6 +247,7 @@ btnStageAll.addEventListener("click", async () => {
     try {
         const result = await invoke<string>("stage_files", { paths: ["*"] });
         printLog(`[SUCCESS] ${result}`);
+        selectedUnstagedPaths.clear();
         await refreshFileList();
     } catch (e) {
         printLog(`[ERR] ${e}`);
@@ -298,6 +340,7 @@ btnChooseFolder.addEventListener("click", async () => {
             // 1. Activate the listener and refresh cache/stats
             await invoke("update_repo_path", { path: path });
             activeRepoPath = path;
+            selectedUnstagedPaths.clear();
             fileListEl.innerHTML = "";
             stagedListEl.innerHTML = "";
             btnQuickDeploy.disabled = true;
@@ -322,5 +365,7 @@ btnChooseFolder.addEventListener("click", async () => {
 backgroundAnimation();
 leftUI();
 setInterval(async () => {
-    await refreshFileList();
+    if (topUI.classList.contains("show")) {
+        await refreshFileList();
+    }
 }, 1000);
