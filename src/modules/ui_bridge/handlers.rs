@@ -1,5 +1,5 @@
 use crate::modules::git::executor;
-use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, init, push};
+use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, init, pull, push};
 use crate::modules::repo::{diff, history};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
@@ -94,6 +94,16 @@ pub async fn push_changes(state: tauri::State<'_, AppState>) -> Result<String, S
     let path = get_repo_path(None, &state).await;
 
     tokio::task::spawn_blocking(move || push::push_to_origin(&path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn pull_changes(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let path = get_repo_path(None, &state).await;
+
+    tokio::task::spawn_blocking(move || pull::pull_from_origin(&path))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())

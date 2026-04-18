@@ -15,12 +15,19 @@ const delEl = document.getElementById("del-value")!;
 const syncBtn = document.getElementById("btn-sync")!;
 const btnShowChanges = document.getElementById("btn-show-changes")!;
 const btnGitInit = document.getElementById("btn-git-init")!;
+const btnOpenPullUI = document.getElementById("btn-open-pull-ui")!;
 const topUI = document.getElementById("top-ui")!;
 const bottomUI = document.getElementById("bottom-ui")!;
+const rightUI = document.getElementById("right-ui")!;
 const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
 const btnCloseBottomUI = document.getElementById("btn-close-bottom-ui")!;
+const btnCloseRightUI = document.getElementById("btn-close-right-ui")!;
 const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
+const btnPullAction = document.getElementById("btn-pull-action")!;
+const pullConfirmOverlay = document.getElementById("pull-confirm-overlay")!;
+const btnPullCancel = document.getElementById("btn-pull-cancel")!;
+const btnPullConfirm = document.getElementById("btn-pull-confirm")!;
 const fileListEl = document.getElementById("file-list")!;
 const btnStageSelected = document.getElementById("btn-stage-selected")!;
 const btnStageAll = document.getElementById("btn-stage-all")!;
@@ -79,12 +86,19 @@ setupButtonHandlers({
     syncBtn,
     btnShowChanges,
     btnGitInit,
+    btnOpenPullUI,
     topUI,
     bottomUI,
+    rightUI,
     btnCloseTopUI,
     btnCloseBottomUI,
+    btnCloseRightUI,
     btnDoGitInit,
     btnChooseFolder,
+    btnPullAction,
+    pullConfirmOverlay,
+    btnPullCancel,
+    btnPullConfirm,
     fileListEl,
     stagedListEl,
     btnStageSelected,

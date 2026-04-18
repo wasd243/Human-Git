@@ -11,6 +11,7 @@
 <main id="app-container">
 
     <button id="btn-git-init" class="human-git-main-btn">Find a Repo</button>
+    <button id="btn-open-pull-ui" class="human-git-main-btn">Pull & Fetch & Remote</button>
     <button id="btn-show-changes" class="human-git-main-btn">Show Changes</button>
 
     <div id="console-output"></div>
@@ -56,6 +57,23 @@
     <button id="btn-close-bottom-ui" class="close-btn">✕</button>
     <button id="btn-choose-folder" class="human-git-main-btn choose-folder-btn">Choose your folder</button>
     <button id="btn-do-git-init" class="human-git-main-btn init-action-btn">Initialize Repository</button>
+</div>
+
+<div id="right-ui" class="right-ui">
+    <button id="btn-close-right-ui" class="close-btn">✕</button>
+    <div id="pull-panel-area">
+        <button id="btn-pull-action" class="human-git-main-btn pull-btn">Pull</button>
+    </div>
+
+    <div id="pull-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>This action might disturb/delete your local changes.<br>Are you sure to pull?</p>
+            <div class="confirm-buttons">
+                <button id="btn-pull-cancel" class="human-git-main-btn pull-btn">Cancel</button>
+                <button id="btn-pull-confirm" class="human-git-main-btn pull-btn">Pull</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 

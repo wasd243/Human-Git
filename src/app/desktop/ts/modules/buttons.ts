@@ -5,12 +5,19 @@ interface SetupButtonHandlersParams {
     syncBtn: HTMLElement;
     btnShowChanges: HTMLElement;
     btnGitInit: HTMLElement;
+    btnOpenPullUI: HTMLElement;
     topUI: HTMLElement;
     bottomUI: HTMLElement;
+    rightUI: HTMLElement;
     btnCloseTopUI: HTMLElement;
     btnCloseBottomUI: HTMLElement;
+    btnCloseRightUI: HTMLElement;
     btnDoGitInit: HTMLElement;
     btnChooseFolder: HTMLElement;
+    btnPullAction: HTMLElement;
+    pullConfirmOverlay: HTMLElement;
+    btnPullCancel: HTMLElement;
+    btnPullConfirm: HTMLElement;
     fileListEl: HTMLElement;
     stagedListEl: HTMLElement;
     btnStageSelected: HTMLElement;
@@ -32,12 +39,19 @@ export const setupButtonHandlers = ({
     syncBtn,
     btnShowChanges,
     btnGitInit,
+    btnOpenPullUI,
     topUI,
     bottomUI,
+    rightUI,
     btnCloseTopUI,
     btnCloseBottomUI,
+    btnCloseRightUI,
     btnDoGitInit,
     btnChooseFolder,
+    btnPullAction,
+    pullConfirmOverlay,
+    btnPullCancel,
+    btnPullConfirm,
     fileListEl,
     stagedListEl,
     btnStageSelected,
@@ -53,6 +67,17 @@ export const setupButtonHandlers = ({
     printLog
 }: SetupButtonHandlersParams) => {
     let activeRepoPath = ".";
+    const showMainButtons = () => {
+        (btnGitInit as HTMLButtonElement).style.display = "";
+        (btnOpenPullUI as HTMLButtonElement).style.display = "";
+        (btnShowChanges as HTMLButtonElement).style.display = "";
+    };
+
+    const hideMainButtons = () => {
+        (btnGitInit as HTMLButtonElement).style.display = "none";
+        (btnOpenPullUI as HTMLButtonElement).style.display = "none";
+        (btnShowChanges as HTMLButtonElement).style.display = "none";
+    };
 
     syncBtn.addEventListener("click", async () => {
         printLog("Connecting to shadow dimension...");
@@ -66,15 +91,13 @@ export const setupButtonHandlers = ({
 
     btnShowChanges.addEventListener("click", () => {
         topUI.classList.add("show");
-        (btnShowChanges as HTMLButtonElement).style.display = "none";
-        (btnGitInit as HTMLButtonElement).style.display = "none";
+        hideMainButtons();
         void refreshFileList();
     });
 
     btnCloseTopUI.addEventListener("click", () => {
         topUI.classList.remove("show");
-        (btnShowChanges as HTMLButtonElement).style.display = "";
-        (btnGitInit as HTMLButtonElement).style.display = "";
+        showMainButtons();
     });
 
     btnStageSelected.addEventListener("click", async () => {
@@ -168,14 +191,45 @@ export const setupButtonHandlers = ({
 
     btnGitInit.addEventListener("click", () => {
         bottomUI.classList.add("show");
-        (btnGitInit as HTMLButtonElement).style.display = "none";
-        (btnShowChanges as HTMLButtonElement).style.display = "none";
+        hideMainButtons();
     });
 
     btnCloseBottomUI.addEventListener("click", () => {
         bottomUI.classList.remove("show");
-        (btnGitInit as HTMLButtonElement).style.display = "";
-        (btnShowChanges as HTMLButtonElement).style.display = "";
+        showMainButtons();
+    });
+
+    btnOpenPullUI.addEventListener("click", () => {
+        rightUI.classList.add("show");
+        pullConfirmOverlay.classList.add("hidden");
+        hideMainButtons();
+    });
+
+    btnCloseRightUI.addEventListener("click", () => {
+        rightUI.classList.remove("show");
+        pullConfirmOverlay.classList.add("hidden");
+        showMainButtons();
+    });
+
+    btnPullAction.addEventListener("click", () => {
+        pullConfirmOverlay.classList.remove("hidden");
+    });
+
+    btnPullCancel.addEventListener("click", () => {
+        pullConfirmOverlay.classList.add("hidden");
+    });
+
+    btnPullConfirm.addEventListener("click", async () => {
+        pullConfirmOverlay.classList.add("hidden");
+        printLog("[GIT] Pulling current branch from origin...");
+
+        try {
+            const result = await invoke<string>("pull_changes");
+            printLog(`[SUCCESS] ${result}`);
+            await refreshFileList();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
     });
 
     btnDoGitInit.addEventListener("click", async () => {
