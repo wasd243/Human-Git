@@ -325,11 +325,6 @@
     align-self: flex-end;
 }
 
-#btn-sync {
-    color: inherit;
-    text-shadow: inherit;
-}
-
 #pull-panel-area {
     width: 80%;
     display: flex;

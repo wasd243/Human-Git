@@ -13,7 +13,6 @@ import {setupButtonHandlers} from "./modules/buttons";
 const insEl = document.getElementById("ins-value")!;
 const delEl = document.getElementById("del-value")!;
 
-const syncBtn = document.getElementById("btn-sync")!;
 const btnShowChanges = document.getElementById("btn-show-changes")!;
 const btnGitInit = document.getElementById("btn-git-init")!;
 const btnOpenPullUI = document.getElementById("btn-open-pull-ui")!;
@@ -99,7 +98,6 @@ void fetchInitialStats({
 });
 
 setupButtonHandlers({
-    syncBtn,
     btnShowChanges,
     btnGitInit,
     btnOpenPullUI,

@@ -25,14 +25,6 @@ pub async fn update_repo_path(
         let mut total_lines = state.total_lines.lock().await;
         total_lines.0 = 0;
         total_lines.1 = 0;
-        let mut last_sync = state.last_sync_count.lock().await;
-        *last_sync = 0;
-    }
-
-    // 3. Clear DB cache (shadow_history table)
-    if let Ok(conn) = state.db_conn.get() {
-        let _ = conn.execute("DELETE FROM shadow_history", []);
-        println!("[SYSTEM] DB Cache (shadow_history) cleared for new repository.");
     }
 
     Ok(())

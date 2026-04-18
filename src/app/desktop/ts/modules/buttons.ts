@@ -2,7 +2,6 @@ import {invoke} from "@tauri-apps/api/core";
 import type {MutationPayload} from "./listener";
 
 interface SetupButtonHandlersParams {
-    syncBtn: HTMLElement;
     btnShowChanges: HTMLElement;
     btnGitInit: HTMLElement;
     btnOpenPullUI: HTMLElement;
@@ -67,7 +66,6 @@ const renderRemoteList = (remoteListEl: HTMLElement, remotes: string[]) => {
 };
 
 export const setupButtonHandlers = ({
-    syncBtn,
     btnShowChanges,
     btnGitInit,
     btnOpenPullUI,
@@ -157,16 +155,6 @@ export const setupButtonHandlers = ({
     };
 
     applyForcePushVisualState(false);
-
-    syncBtn.addEventListener("click", async () => {
-        printLog("Connecting to shadow dimension...");
-        try {
-            await invoke("run_shadow_commit", {repoPath: null});
-            printLog("Checkpoint created successfully.");
-        } catch (e) {
-            printLog(`Error: ${e}`);
-        }
-    });
 
     btnShowChanges.addEventListener("click", () => {
         topUI.classList.add("show");

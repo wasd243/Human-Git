@@ -1,4 +1,3 @@
-use crate::modules::git::executor;
 use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, init, pull, push, remote};
 use crate::modules::repo::{diff, history};
 use crate::AppState;
@@ -31,15 +30,6 @@ async fn get_repo_path(
                 .unwrap_or_else(|| ".".to_string())
         }
     }
-}
-
-#[tauri::command]
-pub async fn run_shadow_commit(
-    state: tauri::State<'_, AppState>,
-    repo_path: Option<String>,
-) -> Result<(), String> {
-    let path = get_repo_path(repo_path, &state).await;
-    executor::run_shadow_commit(&path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

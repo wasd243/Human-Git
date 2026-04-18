@@ -1,4 +1,4 @@
-use crate::modules::operations::run_shadow_commit::process_mutation;
+use crate::modules::operations::process_mutation::process_mutation;
 use crate::modules::repo::{diff, history};
 use crate::modules::shared::utils::color::log_color;
 use crate::modules::ui_bridge::handlers::MutationPayload;
@@ -140,10 +140,6 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                 total_lines.0 = stats.insertions;
                 total_lines.1 = stats.deletions;
 
-                let accumulated = stats.insertions + stats.deletions;
-                let mut last_sync = state.last_sync_count.lock().await;
-                *last_sync = accumulated;
-
                 let _ = app_handle.emit(
                     "git-mutation",
                     MutationPayload {
@@ -202,15 +198,6 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                 res_opt = rx.recv() => {
                     match res_opt {
                         Some(res) => {
-                            // Check if we should ignore events globally right now
-                            {
-                                let state = app_handle.state::<AppState>();
-                                let ignore_until = *state.ignore_events_until.lock().await;
-                                if std::time::Instant::now() < ignore_until {
-                                    continue;
-                                }
-                            }
-
                             match res {
                                 Ok(events) => {
                                     let mut mutated_paths = Vec::new();
