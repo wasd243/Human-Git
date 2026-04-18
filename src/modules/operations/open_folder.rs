@@ -1,4 +1,5 @@
 use crate::AppState;
+use rusqlite::OptionalExtension;
 use rfd::FileDialog;
 use std::path::PathBuf;
 
@@ -14,10 +15,15 @@ pub async fn update_repo_path(
     state: tauri::State<'_, AppState>,
     path: String,
 ) -> Result<(), String> {
+    let trimmed_path = path.trim();
+    if trimmed_path.is_empty() {
+        return Err("Repository path cannot be empty.".to_string());
+    }
+
     // 1. Update the path
     {
         let mut current_path = state.current_repo_path.lock().await;
-        *current_path = Some(PathBuf::from(&path));
+        *current_path = Some(PathBuf::from(trimmed_path));
     }
 
     // 2. Clear memory cache/stats
@@ -27,5 +33,33 @@ pub async fn update_repo_path(
         total_lines.1 = 0;
     }
 
+    // 3. Persist last opened repository path
+    let conn = state
+        .db_conn
+        .get()
+        .map_err(|e| format!("Failed to acquire DB connection: {}", e))?;
+    conn.execute(
+        "INSERT INTO app_cache (key, value, updated_at) VALUES ('last_repo_path', ?1, CURRENT_TIMESTAMP)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+        [trimmed_path],
+    )
+    .map_err(|e| format!("Failed to cache repository path: {}", e))?;
+
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_cached_repo_path(state: tauri::State<'_, AppState>) -> Result<Option<String>, String> {
+    let conn = state
+        .db_conn
+        .get()
+        .map_err(|e| format!("Failed to acquire DB connection: {}", e))?;
+
+    conn.query_row(
+        "SELECT value FROM app_cache WHERE key = 'last_repo_path' LIMIT 1",
+        [],
+        |row| row.get::<_, String>(0),
+    )
+    .optional()
+    .map_err(|e| format!("Failed to load cached repository path: {}", e))
 }

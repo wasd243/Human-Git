@@ -47,13 +47,29 @@ interface SetupButtonHandlersParams {
     printLog: (msg: string) => void;
 }
 
+interface ButtonHandlersApi {
+    setActiveRepoPath: (path: string) => void;
+}
+
 const isValidGitRemoteUrl = (url: string) => /^(https?:\/\/|ssh:\/\/|git@)[^\s]+\.git$/.test(url);
 
+const createRemoteMessageRow = (message: string) => {
+    const row = document.createElement("div");
+    row.className = "remote-item";
+
+    const text = document.createElement("span");
+    text.className = "file-path";
+    text.textContent = message;
+
+    row.appendChild(text);
+    return row;
+};
+
 const renderRemoteList = (remoteListEl: HTMLElement, remotes: string[]) => {
-    remoteListEl.innerHTML = "";
+    remoteListEl.replaceChildren();
 
     if (remotes.length === 0) {
-        remoteListEl.innerHTML = `<div class="remote-item"><span class="file-path">No remotes configured.</span></div>`;
+        remoteListEl.appendChild(createRemoteMessageRow("No remotes configured."));
         return;
     }
 
@@ -137,7 +153,8 @@ export const setupButtonHandlers = ({
             const remotes = await invoke<string[]>("list_remotes");
             renderRemoteList(remoteListEl, remotes);
         } catch (e) {
-            remoteListEl.innerHTML = `<div class="remote-item"><span class="file-path">Failed to load remotes.</span></div>`;
+            remoteListEl.replaceChildren();
+            remoteListEl.appendChild(createRemoteMessageRow("Failed to load remotes."));
             printLog(`[ERR] Failed to fetch remotes: ${e}`);
         }
     };
@@ -399,9 +416,9 @@ export const setupButtonHandlers = ({
                 await invoke("update_repo_path", {path});
                 activeRepoPath = path;
                 selectedUnstagedPaths.clear();
-                fileListEl.innerHTML = "";
-                stagedListEl.innerHTML = "";
-                remoteListEl.innerHTML = "";
+                fileListEl.replaceChildren();
+                stagedListEl.replaceChildren();
+                remoteListEl.replaceChildren();
                 btnQuickDeploy.disabled = true;
                 applyForcePushVisualState(false);
                 printLog(`[SYSTEM] Monitoring switched to: ${path}`);
@@ -422,4 +439,11 @@ export const setupButtonHandlers = ({
             printLog(`[ERR] ${e}`);
         }
     });
+
+    return {
+        setActiveRepoPath: (path: string) => {
+            const trimmedPath = path.trim();
+            activeRepoPath = trimmedPath.length > 0 ? trimmedPath : null;
+        }
+    } satisfies ButtonHandlersApi;
 };

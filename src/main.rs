@@ -83,7 +83,8 @@ async fn main() -> anyhow::Result<()> {
             handlers::list_remotes,
             handlers::get_working_status,
             open_folder::update_repo_path,
-            open_folder::open_folder_dialog
+            open_folder::open_folder_dialog,
+            open_folder::get_cached_repo_path
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

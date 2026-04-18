@@ -8,6 +8,7 @@ import {printLog} from "./modules/log";
 import {createRefreshFileList} from "./modules/refreshFileList";
 import {setupEventListeners, fetchInitialStats, type MutationPayload} from "./modules/listener";
 import {setupButtonHandlers} from "./modules/buttons";
+import {invoke} from "@tauri-apps/api/core";
 
 // UI elements
 const insEl = document.getElementById("ins-value")!;
@@ -92,12 +93,7 @@ setupEventListeners({
     isTopUIVisible: () => topUI.classList.contains("show")
 });
 
-void fetchInitialStats({
-    setStats,
-    printLog
-});
-
-setupButtonHandlers({
+const buttonHandlers = setupButtonHandlers({
     btnShowChanges,
     btnGitInit,
     btnOpenPullUI,
@@ -143,6 +139,21 @@ setupButtonHandlers({
     printLog
 });
 
+const restoreLastOpenedFolder = async () => {
+    try {
+        const cachedPath = await invoke<string | null>("get_cached_repo_path");
+        if (!cachedPath) {
+            return;
+        }
+
+        await invoke("update_repo_path", {path: cachedPath});
+        buttonHandlers.setActiveRepoPath(cachedPath);
+        printLog(`[SYSTEM] Restored last opened folder: ${cachedPath}`);
+    } catch (e) {
+        printLog(`[ERR] Failed to restore cached folder: ${e}`);
+    }
+};
+
 void listen<{ ok: boolean; message: string }>("remote-add-result", (event) => {
     if (event.payload.ok) {
         printLog(`[SUCCESS] ${event.payload.message}`);
@@ -152,6 +163,13 @@ void listen<{ ok: boolean; message: string }>("remote-add-result", (event) => {
 });
 
 printLog("[HumanGit] Engine Online.");
+
+void restoreLastOpenedFolder().then(() =>
+    fetchInitialStats({
+        setStats,
+        printLog
+    })
+);
 
 backgroundAnimation();
 leftUI();
