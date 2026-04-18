@@ -104,7 +104,7 @@ pub async fn push_changes(
     let path = get_repo_path(None, &state).await;
     let force_flag = force.unwrap_or(false);
 
-    tokio::task::spawn_blocking(move || push::push_to_origin(&path, force_flag))
+    tokio::task::spawn_blocking(move || push::push_to_origin_with_force(&path, force_flag))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
