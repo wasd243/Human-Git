@@ -229,7 +229,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                                     }
 
                                     if !mutated_paths.is_empty() {
-                                        // 先通知 GUI 刷新，不依赖 process_mutation 是否成功
+                                        // Notify the GUI to refresh first, regardless of process_mutation success
                                         let _ = app_handle.emit("files-changed", true);
                                         log_color_fn("[SYSTEM]", "Files changed, notifying UI...", "cyan");
 

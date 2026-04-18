@@ -5,7 +5,7 @@ const consoleEl = document.getElementById("console-output")!;
 export function  printLog(msg: string) {
     const p = document.createElement("p");
 
-    // 简单的日志染色解析逻辑 (复用之前的设计思路)
+    // Simple log-color parsing logic (reusing the previous design approach)
     if (msg.startsWith("[SYSTEM]")) p.className = "log-system";
     else if (msg.startsWith("[ERR]")) p.className = "log-err";
     else if (msg.startsWith("[GIT]")) p.className = "log-git";
