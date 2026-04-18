@@ -205,6 +205,24 @@
     border-color: rgba(255, 255, 255, 0.5);
 }
 
+#staged-files-section {
+    margin-top: 8px;
+}
+
+#staged-files-title {
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+#staged-file-list {
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
 .commit-push-buttons {
     display: flex;
     gap: 15px;
