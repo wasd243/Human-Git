@@ -1,23 +1,8 @@
 use anyhow::{anyhow, Context, Result};
 use git2::{
-    build::CheckoutBuilder, Config, Cred, CredentialType, FetchOptions, MergeAnalysis,
+    build::CheckoutBuilder, Cred, CredentialType, FetchOptions, MergeAnalysis,
     RemoteCallbacks, Repository, Signature,
 };
-
-fn build_signature(repo: &Repository) -> Result<Signature<'_>> {
-    let config = repo
-        .config()
-        .or_else(|_| Config::open_default())
-        .context("Failed to open Git config")?;
-    let name = config
-        .get_string("user.name")
-        .unwrap_or_else(|_| "HumanGit".to_string());
-    let email = config
-        .get_string("user.email")
-        .unwrap_or_else(|_| "humangit@system.local".to_string());
-
-    Signature::now(&name, &email).context("Failed to build Git signature")
-}
 
 pub fn pull_from_origin(repo_path: &str) -> Result<String> {
     let repo = Repository::discover(repo_path).context("Failed to open repository")?;
@@ -120,7 +105,8 @@ pub fn pull_from_origin(repo_path: &str) -> Result<String> {
         let tree = repo
             .find_tree(tree_id)
             .context("Failed to resolve merge tree")?;
-        let signature = build_signature(&repo)?;
+        let signature =
+            Signature::now("HumanGit", "humangit@system.local").context("Failed to build Git signature")?;
         let message = format!("Merge remote-tracking branch 'origin/{}'", branch_name);
 
         repo.commit(
