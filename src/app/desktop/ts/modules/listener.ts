@@ -50,6 +50,9 @@ export const fetchInitialStats = async ({
         const payload = await invoke<MutationPayload>("get_initial_stats");
         setStats(payload);
     } catch (e) {
+        if (String(e).includes("Repository path is not selected")) {
+            return;
+        }
         printLog(`[ERR] Failed to fetch initial stats: ${e}`);
     }
 };

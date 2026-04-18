@@ -110,7 +110,7 @@ export const setupButtonHandlers = ({
     resetStats,
     printLog
 }: SetupButtonHandlersParams) => {
-    let activeRepoPath = ".";
+    let activeRepoPath: string | null = null;
 
     const applyForcePushVisualState = (enabled: boolean) => {
         forcePushCheckbox.checked = enabled;
@@ -373,6 +373,11 @@ export const setupButtonHandlers = ({
     });
 
     btnDoGitInit.addEventListener("click", async () => {
+        if (!activeRepoPath) {
+            printLog("[SYSTEM] Please choose a folder before initializing a repository.");
+            return;
+        }
+
         printLog(`[GIT] Initializing repository in ${activeRepoPath}...`);
         try {
             const result = await invoke<string>("git_init", {repoPath: activeRepoPath});
