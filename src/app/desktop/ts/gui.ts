@@ -19,6 +19,8 @@ interface FileStatus {
     path: string;
 }
 
+const isStagedFile = (file: FileStatus) => file.x.trim() !== "" && file.x !== "?";
+
 // 找到那些显示数字的元素
 const insEl = document.getElementById("ins-value")!;
 const delEl = document.getElementById("del-value")!;
@@ -39,7 +41,26 @@ const btnQuickDeploy = document.getElementById("btn-quick-deploy") as HTMLButton
 const btnCommit = document.getElementById("btn-commit")!;
 const btnPush = document.getElementById("btn-push")!;
 const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
+const stagedSectionEl = document.createElement("div");
+const stagedTitleEl = document.createElement("div");
+const stagedListEl = document.createElement("div");
 let activeRepoPath = ".";
+
+stagedSectionEl.id = "staged-files-section";
+stagedTitleEl.id = "staged-files-title";
+stagedListEl.id = "staged-file-list";
+stagedTitleEl.textContent = "Staged changes";
+stagedSectionEl.style.marginTop = "8px";
+stagedTitleEl.style.marginBottom = "6px";
+stagedTitleEl.style.fontWeight = "600";
+stagedListEl.style.maxHeight = "120px";
+stagedListEl.style.overflowY = "auto";
+stagedListEl.style.border = "1px solid rgba(255,255,255,0.15)";
+stagedListEl.style.borderRadius = "6px";
+stagedListEl.style.padding = "6px";
+stagedSectionEl.appendChild(stagedTitleEl);
+stagedSectionEl.appendChild(stagedListEl);
+commitMessageEl.insertAdjacentElement("afterend", stagedSectionEl);
 
 
 const setStats = (stats: MutationPayload) => {
@@ -92,14 +113,22 @@ printLog("[HumanGit] Engine Online.");
 const refreshFileList = async () => {
     try {
         const files = await invoke<FileStatus[]>("get_working_status");
+        const stagedFiles = files.filter(isStagedFile);
+        const unstagedFiles = files.filter(file => !isStagedFile(file));
+
         fileListEl.innerHTML = "";
+        stagedListEl.innerHTML = "";
         btnQuickDeploy.disabled = files.length === 0;
-        files.forEach(file => {
+
+        if (unstagedFiles.length === 0) {
+            fileListEl.innerHTML = `<div class="file-item"><span class="file-path">No unstaged changes.</span></div>`;
+        }
+
+        unstagedFiles.forEach(file => {
             const div = document.createElement("div");
             div.className = "file-item";
-            const isChecked = file.x !== "" && file.x !== " ";
             div.innerHTML = `
-                <input type="checkbox" data-path="${file.path}" ${isChecked ? "checked" : ""}>
+                <input type="checkbox" data-path="${file.path}">
                 <span class="file-status">[${file.x}${file.y}]</span>
                 <span class="file-path">${file.path}</span>
             `;
@@ -111,8 +140,24 @@ const refreshFileList = async () => {
             });
             fileListEl.appendChild(div);
         });
+
+        if (stagedFiles.length === 0) {
+            stagedListEl.innerHTML = `<div class="file-item"><span class="file-path">No staged changes.</span></div>`;
+            return;
+        }
+
+        stagedFiles.forEach(file => {
+            const div = document.createElement("div");
+            div.className = "file-item";
+            div.innerHTML = `
+                <span class="file-status">[${file.x}${file.y}]</span>
+                <span class="file-path">${file.path}</span>
+            `;
+            stagedListEl.appendChild(div);
+        });
     } catch (e) {
         fileListEl.innerHTML = "";
+        stagedListEl.innerHTML = "";
         btnQuickDeploy.disabled = true;
         printLog(`[ERR] Failed to fetch file status: ${e}`);
     }
@@ -254,6 +299,7 @@ btnChooseFolder.addEventListener("click", async () => {
             await invoke("update_repo_path", { path: path });
             activeRepoPath = path;
             fileListEl.innerHTML = "";
+            stagedListEl.innerHTML = "";
             btnQuickDeploy.disabled = true;
             printLog(`[SYSTEM] Monitoring switched to: ${path}`);
 
