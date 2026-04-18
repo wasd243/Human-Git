@@ -6,10 +6,17 @@ export function leftUI() {
 
     const leftPanel = document.createElement("div");
     leftPanel.id = "left-ui";
-    leftPanel.textContent = "Left panel reserved for future implementation.";
+
+    let consoleEl = document.getElementById("console-output");
+    if (!consoleEl) {
+        consoleEl = document.createElement("div");
+        consoleEl.id = "console-output";
+    }
+
+    leftPanel.appendChild(consoleEl);
     document.body.appendChild(leftPanel);
 
-// Interactions
+    // Interactions
     triggerBtn.addEventListener("click", () => {
         leftPanel.classList.toggle("show");
     });
