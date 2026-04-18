@@ -34,6 +34,32 @@ const captureSelectionFromDom = (fileListEl: HTMLElement, selectedUnstagedPaths:
     });
 };
 
+const createEmptyRow = (message: string) => {
+    const row = document.createElement("div");
+    row.className = "file-item";
+
+    const text = document.createElement("span");
+    text.className = "file-path";
+    text.textContent = message;
+
+    row.appendChild(text);
+    return row;
+};
+
+const createStatusSpan = (file: FileStatus) => {
+    const status = document.createElement("span");
+    status.className = "file-status";
+    status.textContent = `[${file.x}${file.y}]`;
+    return status;
+};
+
+const createPathSpan = (path: string) => {
+    const pathSpan = document.createElement("span");
+    pathSpan.className = "file-path";
+    pathSpan.textContent = path;
+    return pathSpan;
+};
+
 export const createRefreshFileList = ({
     fileListEl,
     stagedListEl,
@@ -56,25 +82,25 @@ export const createRefreshFileList = ({
                 }
             });
 
-            fileListEl.innerHTML = "";
-            stagedListEl.innerHTML = "";
+            fileListEl.replaceChildren();
+            stagedListEl.replaceChildren();
             btnQuickDeploy.disabled = files.length === 0;
 
             if (unstagedFiles.length === 0) {
-                fileListEl.innerHTML = `<div class="file-item"><span class="file-path">No unstaged changes.</span></div>`;
+                fileListEl.appendChild(createEmptyRow("No unstaged changes."));
             }
 
             unstagedFiles.forEach(file => {
                 const div = document.createElement("div");
                 div.className = "file-item";
-                div.innerHTML = `
-                <input type="checkbox" data-path="${file.path}">
-                <span class="file-status">[${file.x}${file.y}]</span>
-                <span class="file-path">${file.path}</span>
-            `;
-
-                const checkbox = div.querySelector("input") as HTMLInputElement;
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.dataset.path = file.path;
                 checkbox.checked = selectedUnstagedPaths.has(file.path);
+
+                div.appendChild(checkbox);
+                div.appendChild(createStatusSpan(file));
+                div.appendChild(createPathSpan(file.path));
 
                 checkbox.addEventListener("change", () => {
                     updateSelectedPath(selectedUnstagedPaths, file.path, checkbox.checked);
@@ -91,22 +117,20 @@ export const createRefreshFileList = ({
             });
 
             if (stagedFiles.length === 0) {
-                stagedListEl.innerHTML = `<div class="file-item"><span class="file-path">No staged changes.</span></div>`;
+                stagedListEl.appendChild(createEmptyRow("No staged changes."));
                 return;
             }
 
             stagedFiles.forEach(file => {
                 const div = document.createElement("div");
                 div.className = "file-item";
-                div.innerHTML = `
-                <span class="file-status">[${file.x}${file.y}]</span>
-                <span class="file-path">${file.path}</span>
-            `;
+                div.appendChild(createStatusSpan(file));
+                div.appendChild(createPathSpan(file.path));
                 stagedListEl.appendChild(div);
             });
         } catch (e) {
-            fileListEl.innerHTML = "";
-            stagedListEl.innerHTML = "";
+            fileListEl.replaceChildren();
+            stagedListEl.replaceChildren();
             btnQuickDeploy.disabled = true;
             printLog(`[ERR] Failed to fetch file status: ${e}`);
         }
