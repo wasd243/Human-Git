@@ -1,17 +1,17 @@
-/* 顺手把你那个惨白的日志框变高级一点 */
+/* Give that pale log panel a more premium look */
 #console-output {
     height: 150px;
     overflow-y: auto;
     border: 1px solid rgba(0, 0, 0, 0.2);
     padding: 10px;
     font-size: 0.9rem;
-    /* 改掉纯白背景，换上半透明黑底或者干脆全透明 */
+    /* Replace the pure white background with a translucent black base or fully transparent */
     background: rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(2px);
     border-radius: 4px;
 }
 
-/* 日志染色样式 */
+/* Log color styles */
 .log-system {
     color: #666;
     font-style: italic;

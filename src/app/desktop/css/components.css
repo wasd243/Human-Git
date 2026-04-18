@@ -1,39 +1,39 @@
 button {
     width: 100%;
     padding: 15px;
-    /* 极致磨砂：模糊度不宜过大，8-12px 最佳 */
+    /* Ultra-frosted glass: keep blur moderate, 8-12px works best */
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(10px);
-    /* 使用带透明度的白色，营造一种光线在边缘折射的质感 */
+    /* Use translucent white to create a refracted light feel on the edges */
     border: 1px solid rgb(227 74 57);
-    /* 细节微调：让边框在深色山水背景下更精致 */
-    border-radius: 4px; /* 极小的圆角，或者 0 像素保持硬朗 */
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); /* 极轻的阴影，增加浮空感 */
+    /* Fine-tuned details: make borders look refined over the dark landscape background */
+    border-radius: 4px; /* Very small corner radius, or 0px to keep a crisp edge */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); /* Very light shadow to add a floating feel */
     cursor: pointer;
     background:none;
 }
 
 .human-git-main-btn {
-  /* 形状：宽而扁的圆头 */
+  /* Shape: a wide, flat rounded capsule */
   width: 420px;
   height: 48px;
-  border-radius: 24px; /* 高度的一半 */
+  border-radius: 24px; /* Half of the height */
   
-  /* 材质：极致磨砂 */
+  /* Material: ultra-frosted glass */
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(15px) saturate(120%);
   border: 0.5px solid rgba(255, 255, 255, 0.2);
   
-  /* 文字：居中，带点间距 */
+  /* Text: centered with slight letter spacing */
   display: flex;
   justify-content: center;
   align-items: center;
-  color: rgba(242, 234, 218, 0.9); /* 绢本白 */
-  font-family: 'Inter', sans-serif; /* 或者是你选的等宽字体 */
+  color: rgba(242, 234, 218, 0.9); /* Silk-paper white */
+  font-family: 'Inter', sans-serif; /* Or your selected monospaced font */
   letter-spacing: 0.2em;
   font-size: 13px;
   
-  /* 动效 */
+  /* Animation */
   transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   cursor: pointer;
@@ -41,7 +41,7 @@ button {
 }
 
 .human-git-main-btn:hover {
-  width: 450px; /* 稍微伸长，像拉开卷轴 */
+  width: 450px; /* Extend slightly, like unrolling a scroll */
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.5);
   box-shadow: 0 0 25px rgba(255, 255, 255, 0.1);
