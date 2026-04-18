@@ -15,9 +15,16 @@ interface SetupButtonHandlersParams {
     btnDoGitInit: HTMLElement;
     btnChooseFolder: HTMLElement;
     btnPullAction: HTMLElement;
+    btnRemoteAction: HTMLElement;
+    remoteInputPanel: HTMLElement;
+    remoteUrlInput: HTMLTextAreaElement;
+    remoteListEl: HTMLElement;
     pullConfirmOverlay: HTMLElement;
     btnPullCancel: HTMLElement;
     btnPullConfirm: HTMLElement;
+    remoteConfirmOverlay: HTMLElement;
+    btnRemoteCancel: HTMLElement;
+    btnRemoteConfirm: HTMLElement;
     fileListEl: HTMLElement;
     stagedListEl: HTMLElement;
     btnStageSelected: HTMLElement;
@@ -33,7 +40,34 @@ interface SetupButtonHandlersParams {
     printLog: (msg: string) => void;
 }
 
-const isEnglishCommitMessage = (message: string) => !/[^\x00-\x7F]/.test(message);
+const isEnglishText = (message: string) => !/[^\x00-\x7F]/.test(message);
+const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9\-_./]+\))?!?: [\x20-\x7E]+$/;
+const isValidGitRemoteUrl = (url: string) => /^(https?:\/\/|ssh:\/\/|git@)[^\s]+\.git$/.test(url);
+
+const validateCommitMessage = (msg: string): string | null => {
+    if (!msg) return "Commit message cannot be empty.";
+    if (!isEnglishText(msg)) return "Commit message must be in English.";
+    if (!conventionalCommitRegex.test(msg)) {
+        return "Commit message must follow Conventional Commits, e.g. feat: add remote management.";
+    }
+    return null;
+};
+
+const renderRemoteList = (remoteListEl: HTMLElement, remotes: string[]) => {
+    remoteListEl.innerHTML = "";
+
+    if (remotes.length === 0) {
+        remoteListEl.innerHTML = `<div class="remote-item"><span class="file-path">No remotes configured.</span></div>`;
+        return;
+    }
+
+    remotes.forEach((remote) => {
+        const row = document.createElement("div");
+        row.className = "remote-item";
+        row.textContent = remote;
+        remoteListEl.appendChild(row);
+    });
+};
 
 export const setupButtonHandlers = ({
     syncBtn,
@@ -49,9 +83,16 @@ export const setupButtonHandlers = ({
     btnDoGitInit,
     btnChooseFolder,
     btnPullAction,
+    btnRemoteAction,
+    remoteInputPanel,
+    remoteUrlInput,
+    remoteListEl,
     pullConfirmOverlay,
     btnPullCancel,
     btnPullConfirm,
+    remoteConfirmOverlay,
+    btnRemoteCancel,
+    btnRemoteConfirm,
     fileListEl,
     stagedListEl,
     btnStageSelected,
@@ -67,6 +108,17 @@ export const setupButtonHandlers = ({
     printLog
 }: SetupButtonHandlersParams) => {
     let activeRepoPath = ".";
+
+    const refreshRemoteList = async () => {
+        try {
+            const remotes = await invoke<string[]>("list_remotes");
+            renderRemoteList(remoteListEl, remotes);
+        } catch (e) {
+            remoteListEl.innerHTML = `<div class="remote-item"><span class="file-path">Failed to load remotes.</span></div>`;
+            printLog(`[ERR] Failed to fetch remotes: ${e}`);
+        }
+    };
+
     const showMainButtons = () => {
         (btnGitInit as HTMLButtonElement).style.display = "";
         (btnOpenPullUI as HTMLButtonElement).style.display = "";
@@ -131,13 +183,10 @@ export const setupButtonHandlers = ({
 
     btnCommit.addEventListener("click", async () => {
         const msg = commitMessageEl.value.trim();
-        if (!msg) {
-            printLog("[SYSTEM] Commit message cannot be empty.");
-            return;
-        }
+        const validationErr = validateCommitMessage(msg);
 
-        if (!isEnglishCommitMessage(msg)) {
-            printLog("[SYSTEM] Commit message must be in English.");
+        if (validationErr) {
+            printLog(`[SYSTEM] ${validationErr}`);
             return;
         }
 
@@ -168,18 +217,18 @@ export const setupButtonHandlers = ({
         }
 
         const message = commitMessageEl.value.trim();
-        if (message && !isEnglishCommitMessage(message)) {
-            printLog("[SYSTEM] Commit message must be in English.");
+        const validationErr = validateCommitMessage(message);
+
+        if (validationErr) {
+            printLog(`[SYSTEM] ${validationErr}`);
             return;
         }
-
-        const payload = message ? {message} : {message: null};
 
         btnQuickDeploy.disabled = true;
 
         try {
             printLog("[GIT] Running quick deploy: stage, commit, push...");
-            const result = await invoke<string>("commit_and_push", payload);
+            const result = await invoke<string>("commit_and_push", {message});
             printLog(`[SUCCESS] ${result}`);
             commitMessageEl.value = "";
         } catch (e) {
@@ -202,12 +251,17 @@ export const setupButtonHandlers = ({
     btnOpenPullUI.addEventListener("click", () => {
         rightUI.classList.add("show");
         pullConfirmOverlay.classList.add("hidden");
+        remoteConfirmOverlay.classList.add("hidden");
+        remoteInputPanel.classList.add("hidden");
         hideMainButtons();
+        void refreshRemoteList();
     });
 
     btnCloseRightUI.addEventListener("click", () => {
         rightUI.classList.remove("show");
         pullConfirmOverlay.classList.add("hidden");
+        remoteConfirmOverlay.classList.add("hidden");
+        remoteInputPanel.classList.add("hidden");
         showMainButtons();
     });
 
@@ -229,6 +283,57 @@ export const setupButtonHandlers = ({
             await refreshFileList();
         } catch (e) {
             printLog(`[ERR] ${e}`);
+        }
+    });
+
+    btnRemoteAction.addEventListener("click", () => {
+        if (remoteInputPanel.classList.contains("hidden")) {
+            remoteInputPanel.classList.remove("hidden");
+            remoteUrlInput.focus();
+            printLog("[SYSTEM] Enter remote URL ending with .git, then click Remote again.");
+            return;
+        }
+
+        const url = remoteUrlInput.value.trim();
+        if (!url) {
+            printLog("[SYSTEM] Remote URL cannot be empty.");
+            return;
+        }
+
+        if (!isValidGitRemoteUrl(url)) {
+            printLog("[SYSTEM] Invalid remote URL. Example: https://github.com/org/repo.git");
+            return;
+        }
+
+        remoteConfirmOverlay.classList.remove("hidden");
+    });
+
+    btnRemoteCancel.addEventListener("click", () => {
+        remoteConfirmOverlay.classList.add("hidden");
+    });
+
+    btnRemoteConfirm.addEventListener("click", async () => {
+        remoteConfirmOverlay.classList.add("hidden");
+
+        const url = remoteUrlInput.value.trim();
+        if (!url) {
+            printLog("[SYSTEM] Remote URL cannot be empty.");
+            return;
+        }
+
+        if (!isValidGitRemoteUrl(url)) {
+            printLog("[SYSTEM] Invalid remote URL. Example: https://github.com/org/repo.git");
+            return;
+        }
+
+        printLog("[GIT] Adding remote 'origin'...");
+
+        try {
+            await invoke<string>("add_remote_origin", {url});
+            remoteUrlInput.value = "";
+            await refreshRemoteList();
+        } catch (_) {
+            // Result is sent through backend emit: "remote-add-result"
         }
     });
 
@@ -256,6 +361,7 @@ export const setupButtonHandlers = ({
                 selectedUnstagedPaths.clear();
                 fileListEl.innerHTML = "";
                 stagedListEl.innerHTML = "";
+                remoteListEl.innerHTML = "";
                 btnQuickDeploy.disabled = true;
                 printLog(`[SYSTEM] Monitoring switched to: ${path}`);
 
@@ -266,6 +372,8 @@ export const setupButtonHandlers = ({
                     resetStats();
                     printLog("[SYSTEM] Selected folder is not a Git repository yet.");
                 }
+
+                await refreshRemoteList();
             } else {
                 printLog("[SYSTEM] Folder selection cancelled.");
             }

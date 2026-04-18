@@ -16,6 +16,7 @@ pub mod modules {
         pub mod open_folder;
         pub mod pull;
         pub mod push;
+        pub mod remote;
         pub mod run_shadow_commit;
     }
     // Git core
@@ -85,6 +86,8 @@ async fn main() -> anyhow::Result<()> {
             handlers::commit_and_push,
             handlers::push_changes,
             handlers::pull_changes,
+            handlers::add_remote_origin,
+            handlers::list_remotes,
             handlers::get_working_status,
             open_folder::update_repo_path,
             open_folder::open_folder_dialog

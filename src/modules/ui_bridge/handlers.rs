@@ -1,13 +1,20 @@
 use crate::modules::git::executor;
-use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, init, pull, push};
+use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, init, pull, push, remote};
 use crate::modules::repo::{diff, history};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
+use tauri::Emitter;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationPayload {
     pub insertions: i32,
     pub deletions: i32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RemoteAddEventPayload {
+    pub ok: bool,
+    pub message: String,
 }
 
 async fn get_repo_path(
@@ -122,6 +129,47 @@ pub async fn commit_and_push(
     .await
     .map_err(|e| e.to_string())?
     .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn add_remote_origin(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    url: String,
+) -> Result<String, String> {
+    let path = get_repo_path(None, &state).await;
+
+    let result = tokio::task::spawn_blocking(move || remote::add_remote_origin(&path, &url))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string());
+
+    let payload = match &result {
+        Ok(msg) => RemoteAddEventPayload {
+            ok: true,
+            message: msg.clone(),
+        },
+        Err(err) => RemoteAddEventPayload {
+            ok: false,
+            message: err.clone(),
+        },
+    };
+
+    let _ = app_handle.emit("remote-add-result", payload);
+
+    result
+}
+
+#[tauri::command]
+pub async fn list_remotes(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<String>, String> {
+    let path = get_repo_path(None, &state).await;
+
+    tokio::task::spawn_blocking(move || remote::list_remotes(&path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

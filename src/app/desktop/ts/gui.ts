@@ -1,6 +1,7 @@
 import "../css/components.css";
 import "../css/panels.css";
 
+import {listen} from "@tauri-apps/api/event";
 import {backgroundAnimation} from "./modules/background";
 import {leftUI} from "./modules/leftUI";
 import {printLog} from "./modules/log";
@@ -25,9 +26,16 @@ const btnCloseRightUI = document.getElementById("btn-close-right-ui")!;
 const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 const btnPullAction = document.getElementById("btn-pull-action")!;
+const btnRemoteAction = document.getElementById("btn-remote-action")!;
+const remoteInputPanel = document.getElementById("remote-input-panel")!;
+const remoteUrlInput = document.getElementById("remote-url-input") as HTMLTextAreaElement;
+const remoteListEl = document.getElementById("remote-list")!;
 const pullConfirmOverlay = document.getElementById("pull-confirm-overlay")!;
 const btnPullCancel = document.getElementById("btn-pull-cancel")!;
 const btnPullConfirm = document.getElementById("btn-pull-confirm")!;
+const remoteConfirmOverlay = document.getElementById("remote-confirm-overlay")!;
+const btnRemoteCancel = document.getElementById("btn-remote-cancel")!;
+const btnRemoteConfirm = document.getElementById("btn-remote-confirm")!;
 const fileListEl = document.getElementById("file-list")!;
 const btnStageSelected = document.getElementById("btn-stage-selected")!;
 const btnStageAll = document.getElementById("btn-stage-all")!;
@@ -96,9 +104,16 @@ setupButtonHandlers({
     btnDoGitInit,
     btnChooseFolder,
     btnPullAction,
+    btnRemoteAction,
+    remoteInputPanel,
+    remoteUrlInput,
+    remoteListEl,
     pullConfirmOverlay,
     btnPullCancel,
     btnPullConfirm,
+    remoteConfirmOverlay,
+    btnRemoteCancel,
+    btnRemoteConfirm,
     fileListEl,
     stagedListEl,
     btnStageSelected,
@@ -112,6 +127,14 @@ setupButtonHandlers({
     setStats,
     resetStats,
     printLog
+});
+
+void listen<{ ok: boolean; message: string }>("remote-add-result", (event) => {
+    if (event.payload.ok) {
+        printLog(`[SUCCESS] ${event.payload.message}`);
+    } else {
+        printLog(`[ERR] ${event.payload.message}`);
+    }
 });
 
 printLog("[HumanGit] Engine Online.");

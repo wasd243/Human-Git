@@ -23,7 +23,7 @@
 
 <div id="top-ui" class="top-ui">
     <button id="btn-close-top-ui" class="close-btn">✕</button>
-    
+
     <div id="file-staging-area">
         <div id="file-list"></div>
         <div class="staging-buttons">
@@ -61,8 +61,20 @@
 
 <div id="right-ui" class="right-ui">
     <button id="btn-close-right-ui" class="close-btn">✕</button>
+
+    <div id="remote-input-panel" class="remote-input-panel hidden">
+        <label for="remote-url-input">Remote URL</label>
+        <textarea id="remote-url-input" placeholder="https://github.com/owner/repo.git"></textarea>
+    </div>
+
     <div id="pull-panel-area">
         <button id="btn-pull-action" class="human-git-main-btn pull-btn">Pull</button>
+        <button id="btn-remote-action" class="human-git-main-btn pull-btn">Remote</button>
+    </div>
+
+    <div id="remote-list-section">
+        <div id="remote-list-title">Configured Remotes</div>
+        <div id="remote-list"></div>
     </div>
 
     <div id="pull-confirm-overlay" class="confirm-overlay hidden">
@@ -74,8 +86,17 @@
             </div>
         </div>
     </div>
-</div>
 
+    <div id="remote-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>Are you sure to add a remote?</p>
+            <div class="confirm-buttons">
+                <button id="btn-remote-cancel" class="human-git-main-btn pull-btn">Cancel</button>
+                <button id="btn-remote-confirm" class="human-git-main-btn pull-btn">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module" src="ts/gui.ts"></script>
 </body>
