@@ -41,11 +41,56 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    animation: leftUiColorSwitch 2s infinite alternate ease-in-out;
+    gap: 6px;
+    overflow-y: auto;
+    animation: none;
 }
 
 #left-ui.show {
     left: 0;
+}
+
+#left-ui .left-log-entry {
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    word-break: break-word;
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    color: rgba(242, 234, 218, 0.92);
+    text-shadow: none;
+}
+
+#left-ui .left-log-entry.log-system {
+    color: #cfd8dc;
+    border-left-color: rgba(207, 216, 220, 0.6);
+    font-style: italic;
+}
+
+#left-ui .left-log-entry.log-err {
+    color: #ffd8d8;
+    border-left-color: rgba(255, 88, 88, 0.9);
+    background: rgba(120, 0, 0, 0.28);
+    font-weight: 700;
+}
+
+#left-ui .left-log-entry.log-git {
+    color: #b2dfdb;
+    border-left-color: rgba(77, 182, 172, 0.85);
+}
+
+#left-ui .left-log-entry.log-success {
+    color: #c8e6c9;
+    border-left-color: rgba(102, 187, 106, 0.95);
+    background: rgba(27, 94, 32, 0.24);
+}
+
+#left-ui .left-log-entry.log-event {
+    color: #e1bee7;
+    border-left-color: rgba(156, 39, 176, 0.75);
 }
 
 .top-ui {
