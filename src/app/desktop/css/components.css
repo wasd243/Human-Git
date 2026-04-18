@@ -79,7 +79,7 @@ button {
     left: 20px;
     width: 50px;
     height: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(20, 20, 20, 0.4);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -116,7 +116,7 @@ button {
 #top-left-sync-btn:hover {
     transform: scale(1.05);
     background: rgba(30, 30, 30, 0.6);
-    border-color: rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.4);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 107, 107, 0.3);
 }
 
@@ -125,35 +125,44 @@ button {
 }
 
 #btn-git-init {
-    position: fixed !important;
-    top: 5% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    margin: 0 !important;
+    position: fixed;
+    top: 5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
     z-index: 10;
 }
 
 #btn-show-changes {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    margin: 0 !important;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    z-index: 10;
+}
+
+#btn-open-pull-ui {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
     z-index: 10;
 }
 
 .init-action-btn {
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .choose-folder-btn {
-    position: absolute !important;
-    top: 30% !important;
-    left: 50% !important;
-    width: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    width: 50%;
+    transform: translate(-50%, -50%);
 }

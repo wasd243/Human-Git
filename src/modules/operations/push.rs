@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use git2::{Cred, CredentialType, PushOptions, RemoteCallbacks, Repository};
 
-pub fn push_to_origin(repo_path: &str) -> Result<String> {
+fn push_internal(repo_path: &str, force: bool) -> Result<String> {
     let repo = Repository::discover(repo_path).context("Failed to open repository")?;
     let mut remote = repo
         .find_remote("origin")
@@ -32,8 +32,27 @@ pub fn push_to_origin(repo_path: &str) -> Result<String> {
     let mut push_options = PushOptions::new();
     push_options.remote_callbacks(callbacks);
 
-    let refspec = format!("refs/heads/{0}:refs/heads/{0}", branch_name);
+    let refspec = if force {
+        format!("+refs/heads/{0}:refs/heads/{0}", branch_name)
+    } else {
+        format!("refs/heads/{0}:refs/heads/{0}", branch_name)
+    };
+
     remote.push(&[refspec.as_str()], Some(&mut push_options))?;
 
-    Ok(format!("Push successful to origin/{}.", branch_name))
+    if force {
+        Ok(format!("Force push successful to origin/{}.", branch_name))
+    } else {
+        Ok(format!("Push successful to origin/{}.", branch_name))
+    }
+}
+
+// Backward-compatible API for old call sites (e.g. executor.rs)
+pub fn push_to_origin(repo_path: &str) -> Result<String> {
+    push_internal(repo_path, false)
+}
+
+// New API for UI force-push flow
+pub fn push_to_origin_with_force(repo_path: &str, force: bool) -> Result<String> {
+    push_internal(repo_path, force)
 }

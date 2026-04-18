@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use git2::{Config, ErrorCode, PushOptions, RemoteCallbacks, Repository, Signature};
+use git2::{ErrorCode, PushOptions, RemoteCallbacks, Repository, Signature};
 
 use crate::modules::operations::add::stage_all_changes;
 
@@ -14,21 +14,6 @@ fn chrono_like_timestamp() -> String {
         Ok(duration) => format!("unix-{}", duration.as_secs()),
         Err(_) => "now".to_string(),
     }
-}
-
-fn build_signature(repo: &Repository) -> Result<Signature<'_>> {
-    let config = repo
-        .config()
-        .or_else(|_| Config::open_default())
-        .context("Failed to open Git config")?;
-    let name = config
-        .get_string("user.name")
-        .unwrap_or_else(|_| "HumanGit".to_string());
-    let email = config
-        .get_string("user.email")
-        .unwrap_or_else(|_| "humangit@system.local".to_string());
-
-    Signature::now(&name, &email).context("Failed to build Git signature")
 }
 
 fn push_head(repo: &Repository) -> Result<String> {
@@ -89,7 +74,8 @@ pub fn commit_and_push(repo_path: &str, message: Option<&str>) -> Result<String>
     let tree = repo
         .find_tree(tree_id)
         .context("Failed to find written tree")?;
-    let signature = build_signature(&repo)?;
+    let signature =
+        Signature::now("HumanGit", "humangit@system.local").context("Failed to build Git signature")?;
 
     let mut parents = Vec::new();
     if let Ok(head_ref) = repo.head() {

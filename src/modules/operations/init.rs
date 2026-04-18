@@ -39,7 +39,7 @@ pub fn init_repo(path: &str) -> Result<String> {
     let tree = repo.find_tree(oid)?;
 
     // Create a signature
-    let signature = Signature::now("HumanGit", "humangit@example.com")?;
+    let signature = Signature::now("HumanGit", "humangit@system.local")?;
 
     repo.commit(
         Some("HEAD"),

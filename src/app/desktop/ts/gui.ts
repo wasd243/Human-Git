@@ -1,46 +1,72 @@
-import {invoke} from "@tauri-apps/api/core";
-import {listen} from "@tauri-apps/api/event";
 import "../css/components.css";
 import "../css/panels.css";
 
+import {listen} from "@tauri-apps/api/event";
 import {backgroundAnimation} from "./modules/background";
 import {leftUI} from "./modules/leftUI";
 import {printLog} from "./modules/log";
+import {createRefreshFileList} from "./modules/refreshFileList";
+import {setupEventListeners, fetchInitialStats, type MutationPayload} from "./modules/listener";
+import {setupButtonHandlers} from "./modules/buttons";
+import {invoke} from "@tauri-apps/api/core";
 
-// 定义一个简单的结构体，对应 Rust 发过来的数据
-interface MutationPayload {
-    insertions: number;
-    deletions: number;
-}
-
-interface FileStatus {
-    x: string;
-    y: string;
-    path: string;
-}
-
-// 找到那些显示数字的元素
+// UI elements
 const insEl = document.getElementById("ins-value")!;
 const delEl = document.getElementById("del-value")!;
 
-const syncBtn = document.getElementById("btn-sync")!;
 const btnShowChanges = document.getElementById("btn-show-changes")!;
 const btnGitInit = document.getElementById("btn-git-init")!;
+const btnOpenPullUI = document.getElementById("btn-open-pull-ui")!;
 const topUI = document.getElementById("top-ui")!;
 const bottomUI = document.getElementById("bottom-ui")!;
+const rightUI = document.getElementById("right-ui")!;
 const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
 const btnCloseBottomUI = document.getElementById("btn-close-bottom-ui")!;
+const btnCloseRightUI = document.getElementById("btn-close-right-ui")!;
 const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
+const btnPullAction = document.getElementById("btn-pull-action")!;
+const btnRemoteAction = document.getElementById("btn-remote-action")!;
+const remoteInputPanel = document.getElementById("remote-input-panel")!;
+const remoteUrlInput = document.getElementById("remote-url-input") as HTMLTextAreaElement;
+const remoteListEl = document.getElementById("remote-list")!;
+const pullConfirmOverlay = document.getElementById("pull-confirm-overlay")!;
+const btnPullCancel = document.getElementById("btn-pull-cancel")!;
+const btnPullConfirm = document.getElementById("btn-pull-confirm")!;
+const remoteConfirmOverlay = document.getElementById("remote-confirm-overlay")!;
+const btnRemoteCancel = document.getElementById("btn-remote-cancel")!;
+const btnRemoteConfirm = document.getElementById("btn-remote-confirm")!;
 const fileListEl = document.getElementById("file-list")!;
 const btnStageSelected = document.getElementById("btn-stage-selected")!;
 const btnStageAll = document.getElementById("btn-stage-all")!;
 const btnQuickDeploy = document.getElementById("btn-quick-deploy") as HTMLButtonElement;
 const btnCommit = document.getElementById("btn-commit")!;
 const btnPush = document.getElementById("btn-push")!;
+const forcePushCheckbox = document.getElementById("chk-force-push") as HTMLInputElement;
+const forcePushToggleLabel = document.getElementById("force-push-toggle")!;
+const forceModeConfirmOverlay = document.getElementById("force-mode-confirm-overlay")!;
+const btnForceModeCancel = document.getElementById("btn-force-mode-cancel")!;
+const btnForceModeConfirm = document.getElementById("btn-force-mode-confirm")!;
+const forcePushConfirmOverlay = document.getElementById("force-push-confirm-overlay")!;
+const btnForcePushCancel = document.getElementById("btn-force-push-cancel")!;
+const btnForcePushConfirm = document.getElementById("btn-force-push-confirm")!;
 const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
-let activeRepoPath = ".";
 
+// staged section
+const stagedSectionEl = document.createElement("div");
+const stagedTitleEl = document.createElement("div");
+const stagedListEl = document.createElement("div");
+
+stagedSectionEl.id = "staged-files-section";
+stagedTitleEl.id = "staged-files-title";
+stagedListEl.id = "staged-file-list";
+stagedTitleEl.textContent = "Staged changes";
+stagedSectionEl.appendChild(stagedTitleEl);
+stagedSectionEl.appendChild(stagedListEl);
+commitMessageEl.insertAdjacentElement("afterend", stagedSectionEl);
+
+// local state
+const selectedUnstagedPaths = new Set<string>();
 
 const setStats = (stats: MutationPayload) => {
     insEl.textContent = stats.insertions.toString();
@@ -52,229 +78,104 @@ const resetStats = () => {
     delEl.textContent = "0";
 };
 
-// --- 核心逻辑 ---
-
-// 0. 监听通用日志事件
-listen<string>("log-event", (event) => {
-    printLog(event.payload);
+const refreshFileList = createRefreshFileList({
+    fileListEl,
+    stagedListEl,
+    btnQuickDeploy,
+    selectedUnstagedPaths,
+    printLog
 });
 
-// 1. 监听 Rust 侧的变动广播
-listen<MutationPayload>("git-mutation", (event) => {
-    const {insertions, deletions} = event.payload;
-    setStats({insertions, deletions});
-    printLog(`Detected movement: +${insertions} / -${deletions}`);
+setupEventListeners({
+    setStats,
+    printLog,
+    refreshFileList,
+    isTopUIVisible: () => topUI.classList.contains("show")
 });
 
-// 1.5 Fetch initial stats right after UI loads
-invoke<MutationPayload>("get_initial_stats").then((payload) => {
-    setStats(payload);
-}).catch((e) => {
-    printLog(`[ERR] Failed to fetch initial stats: ${e}`);
+const buttonHandlers = setupButtonHandlers({
+    btnShowChanges,
+    btnGitInit,
+    btnOpenPullUI,
+    topUI,
+    bottomUI,
+    rightUI,
+    btnCloseTopUI,
+    btnCloseBottomUI,
+    btnCloseRightUI,
+    btnDoGitInit,
+    btnChooseFolder,
+    btnPullAction,
+    btnRemoteAction,
+    remoteInputPanel,
+    remoteUrlInput,
+    remoteListEl,
+    pullConfirmOverlay,
+    btnPullCancel,
+    btnPullConfirm,
+    remoteConfirmOverlay,
+    btnRemoteCancel,
+    btnRemoteConfirm,
+    fileListEl,
+    stagedListEl,
+    btnStageSelected,
+    btnStageAll,
+    btnQuickDeploy,
+    btnCommit,
+    btnPush,
+    forcePushCheckbox,
+    forcePushToggleLabel,
+    forceModeConfirmOverlay,
+    btnForceModeCancel,
+    btnForceModeConfirm,
+    forcePushConfirmOverlay,
+    btnForcePushCancel,
+    btnForcePushConfirm,
+    commitMessageEl,
+    selectedUnstagedPaths,
+    refreshFileList,
+    setStats,
+    resetStats,
+    printLog
 });
 
-// 2. 按钮点击触发手动同步
-syncBtn.addEventListener("click", async () => {
-    printLog("Connecting to shadow dimension...");
+const restoreLastOpenedFolder = async () => {
     try {
-        // 调用 Rust 侧定义的 #[tauri::command]
-        await invoke("run_shadow_commit", { repoPath: null });
-        printLog("Checkpoint created successfully.");
+        const cachedPath = await invoke<string | null>("get_cached_repo_path");
+        if (!cachedPath) {
+            return;
+        }
+
+        await invoke("update_repo_path", {path: cachedPath});
+        buttonHandlers.setActiveRepoPath(cachedPath);
+        printLog(`[SYSTEM] Restored last opened folder: ${cachedPath}`);
     } catch (e) {
-        printLog(`Error: ${e}`);
+        printLog(`[ERR] Failed to restore cached folder: ${e}`);
+    }
+};
+
+void listen<{ ok: boolean; message: string }>("remote-add-result", (event) => {
+    if (event.payload.ok) {
+        printLog(`[SUCCESS] ${event.payload.message}`);
+    } else {
+        printLog(`[ERR] ${event.payload.message}`);
     }
 });
 
 printLog("[HumanGit] Engine Online.");
 
-// --- UI Additions for Show Changes ---
-
-const refreshFileList = async () => {
-    try {
-        const files = await invoke<FileStatus[]>("get_working_status");
-        fileListEl.innerHTML = "";
-        btnQuickDeploy.disabled = files.length === 0;
-        files.forEach(file => {
-            const div = document.createElement("div");
-            div.className = "file-item";
-            const isChecked = file.x !== "" && file.x !== " ";
-            div.innerHTML = `
-                <input type="checkbox" data-path="${file.path}" ${isChecked ? "checked" : ""}>
-                <span class="file-status">[${file.x}${file.y}]</span>
-                <span class="file-path">${file.path}</span>
-            `;
-            div.addEventListener("click", (e) => {
-                if ((e.target as HTMLElement).tagName !== 'INPUT') {
-                    const checkbox = div.querySelector('input')!;
-                    checkbox.checked = !checkbox.checked;
-                }
-            });
-            fileListEl.appendChild(div);
-        });
-    } catch (e) {
-        fileListEl.innerHTML = "";
-        btnQuickDeploy.disabled = true;
-        printLog(`[ERR] Failed to fetch file status: ${e}`);
-    }
-};
-
-// 在 refreshFileList 函数定义之后添加
-listen<boolean>("files-changed", () => {
-    printLog("[SYSTEM] File change detected, refreshing list...");
-    if (topUI.classList.contains("show")) {
-        refreshFileList();
-    }
-});
-
-btnShowChanges.addEventListener("click", () => {
-    topUI.classList.add("show");
-    btnShowChanges.style.display = "none";
-    btnGitInit.style.display = "none";
-    refreshFileList();
-});
-
-btnCloseTopUI.addEventListener("click", () => {
-    topUI.classList.remove("show");
-    btnShowChanges.style.display = "";
-    btnGitInit.style.display = "";
-});
-
-btnStageSelected.addEventListener("click", async () => {
-    const checkboxes = fileListEl.querySelectorAll('input[type="checkbox"]:checked');
-    const paths = Array.from(checkboxes).map(cb => (cb as HTMLInputElement).dataset.path!);
-    
-    if (paths.length === 0) {
-        printLog("[SYSTEM] No files selected for staging.");
-        return;
-    }
-
-    try {
-        const result = await invoke<string>("stage_files", { paths });
-        printLog(`[SUCCESS] ${result}`);
-        await refreshFileList();
-    } catch (e) {
-        printLog(`[ERR] ${e}`);
-    }
-});
-
-btnStageAll.addEventListener("click", async () => {
-    try {
-        const result = await invoke<string>("stage_files", { paths: ["*"] });
-        printLog(`[SUCCESS] ${result}`);
-        await refreshFileList();
-    } catch (e) {
-        printLog(`[ERR] ${e}`);
-    }
-});
-
-btnCommit.addEventListener("click", async () => {
-    const msg = commitMessageEl.value.trim();
-    if (!msg) {
-        printLog("[SYSTEM] Commit message cannot be empty.");
-        return;
-    }
-
-    try {
-        printLog("[GIT] Creating commit...");
-        const result = await invoke<string>("commit_changes", { message: msg });
-        printLog(`[SUCCESS] ${result}`);
-        commitMessageEl.value = "";
-        await refreshFileList();
-    } catch (e) {
-        printLog(`[ERR] ${e}`);
-    }
-});
-
-btnPush.addEventListener("click", async () => {
-    try {
-        printLog("[GIT] Pushing current branch to origin...");
-        const result = await invoke<string>("push_changes");
-        printLog(`[SUCCESS] ${result}`);
-    } catch (e) {
-        printLog(`[ERR] ${e}`);
-    }
-});
-
-btnQuickDeploy.addEventListener("click", async () => {
-    if (btnQuickDeploy.disabled) {
-        return;
-    }
-
-    const message = commitMessageEl.value.trim();
-    const payload = message ? { message } : { message: null };
-
-    btnQuickDeploy.disabled = true;
-
-    try {
-        printLog("[GIT] Running quick deploy: stage, commit, push...");
-        const result = await invoke<string>("commit_and_push", payload);
-        printLog(`[SUCCESS] ${result}`);
-        commitMessageEl.value = "";
-    } catch (e) {
-        printLog(`[ERR] ${e}`);
-    } finally {
-        await refreshFileList();
-    }
-});
-
-// --- UI Additions for Git Init ---
-
-btnGitInit.addEventListener("click", () => {
-    bottomUI.classList.add("show");
-    btnGitInit.style.display = "none";
-    btnShowChanges.style.display = "none";
-});
-
-btnCloseBottomUI.addEventListener("click", () => {
-    bottomUI.classList.remove("show");
-    btnGitInit.style.display = "";
-    btnShowChanges.style.display = "";
-});
-
-btnDoGitInit.addEventListener("click", async () => {
-    printLog(`[GIT] Initializing repository in ${activeRepoPath}...`);
-    try {
-        const result = await invoke<string>("git_init", { repoPath: activeRepoPath });
-        printLog(`[SUCCESS] ${result}`);
-        const stats = await invoke<MutationPayload>("get_initial_stats");
-        setStats(stats);
-    } catch (e) {
-        printLog(`[ERR] ${e}`);
-    }
-});
-
-btnChooseFolder.addEventListener("click", async () => {
-    printLog("[SYSTEM] Opening folder dialog...");
-    try {
-        const path = await invoke<string | null>("open_folder_dialog");
-        if (path) {
-            printLog(`[SYSTEM] Folder selected: ${path}`);
-
-            // 1. Activate the listener and refresh cache/stats
-            await invoke("update_repo_path", { path: path });
-            activeRepoPath = path;
-            fileListEl.innerHTML = "";
-            btnQuickDeploy.disabled = true;
-            printLog(`[SYSTEM] Monitoring switched to: ${path}`);
-
-            // 2. Refresh UI stats only if the selected folder is already a repo.
-            try {
-                const stats = await invoke<MutationPayload>("get_initial_stats");
-                setStats(stats);
-            } catch (_statsErr) {
-                resetStats();
-                printLog("[SYSTEM] Selected folder is not a Git repository yet.");
-            }
-        } else {
-            printLog("[SYSTEM] Folder selection cancelled.");
-        }
-    } catch (e) {
-        printLog(`[ERR] ${e}`);
-    }
-});
+void restoreLastOpenedFolder().then(() =>
+    fetchInitialStats({
+        setStats,
+        printLog
+    })
+);
 
 backgroundAnimation();
 leftUI();
+
 setInterval(async () => {
-    await refreshFileList();
+    if (topUI.classList.contains("show")) {
+        await refreshFileList();
+    }
 }, 1000);
