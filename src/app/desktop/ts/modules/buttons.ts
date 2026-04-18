@@ -32,6 +32,14 @@ interface SetupButtonHandlersParams {
     btnQuickDeploy: HTMLButtonElement;
     btnCommit: HTMLElement;
     btnPush: HTMLElement;
+    forcePushCheckbox: HTMLInputElement;
+    forcePushToggleLabel: HTMLElement;
+    forceModeConfirmOverlay: HTMLElement;
+    btnForceModeCancel: HTMLElement;
+    btnForceModeConfirm: HTMLElement;
+    forcePushConfirmOverlay: HTMLElement;
+    btnForcePushCancel: HTMLElement;
+    btnForcePushConfirm: HTMLElement;
     commitMessageEl: HTMLTextAreaElement;
     selectedUnstagedPaths: Set<string>;
     refreshFileList: () => Promise<void>;
@@ -40,18 +48,7 @@ interface SetupButtonHandlersParams {
     printLog: (msg: string) => void;
 }
 
-const isEnglishText = (message: string) => !/[^\x00-\x7F]/.test(message);
-const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9\-_./]+\))?!?: [\x20-\x7E]+$/;
 const isValidGitRemoteUrl = (url: string) => /^(https?:\/\/|ssh:\/\/|git@)[^\s]+\.git$/.test(url);
-
-const validateCommitMessage = (msg: string): string | null => {
-    if (!msg) return "Commit message cannot be empty.";
-    if (!isEnglishText(msg)) return "Commit message must be in English.";
-    if (!conventionalCommitRegex.test(msg)) {
-        return "Commit message must follow Conventional Commits, e.g. feat: add remote management.";
-    }
-    return null;
-};
 
 const renderRemoteList = (remoteListEl: HTMLElement, remotes: string[]) => {
     remoteListEl.innerHTML = "";
@@ -100,6 +97,14 @@ export const setupButtonHandlers = ({
     btnQuickDeploy,
     btnCommit,
     btnPush,
+    forcePushCheckbox,
+    forcePushToggleLabel,
+    forceModeConfirmOverlay,
+    btnForceModeCancel,
+    btnForceModeConfirm,
+    forcePushConfirmOverlay,
+    btnForcePushCancel,
+    btnForcePushConfirm,
     commitMessageEl,
     selectedUnstagedPaths,
     refreshFileList,
@@ -108,6 +113,26 @@ export const setupButtonHandlers = ({
     printLog
 }: SetupButtonHandlersParams) => {
     let activeRepoPath = ".";
+
+    const applyForcePushVisualState = (enabled: boolean) => {
+        forcePushCheckbox.checked = enabled;
+        forcePushToggleLabel.classList.toggle("danger", enabled);
+        btnPush.classList.toggle("force-danger", enabled);
+    };
+
+    const doPush = async (force: boolean) => {
+        try {
+            if (force) {
+                printLog("[GIT] Force pushing current branch to origin...");
+            } else {
+                printLog("[GIT] Pushing current branch to origin...");
+            }
+            const result = await invoke<string>("push_changes", {force});
+            printLog(`[SUCCESS] ${result}`);
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    };
 
     const refreshRemoteList = async () => {
         try {
@@ -131,6 +156,8 @@ export const setupButtonHandlers = ({
         (btnShowChanges as HTMLButtonElement).style.display = "none";
     };
 
+    applyForcePushVisualState(false);
+
     syncBtn.addEventListener("click", async () => {
         printLog("Connecting to shadow dimension...");
         try {
@@ -149,6 +176,8 @@ export const setupButtonHandlers = ({
 
     btnCloseTopUI.addEventListener("click", () => {
         topUI.classList.remove("show");
+        forceModeConfirmOverlay.classList.add("hidden");
+        forcePushConfirmOverlay.classList.add("hidden");
         showMainButtons();
     });
 
@@ -182,13 +211,7 @@ export const setupButtonHandlers = ({
     });
 
     btnCommit.addEventListener("click", async () => {
-        const msg = commitMessageEl.value.trim();
-        const validationErr = validateCommitMessage(msg);
-
-        if (validationErr) {
-            printLog(`[SYSTEM] ${validationErr}`);
-            return;
-        }
+        const msg = commitMessageEl.value;
 
         try {
             printLog("[GIT] Creating commit...");
@@ -202,13 +225,44 @@ export const setupButtonHandlers = ({
     });
 
     btnPush.addEventListener("click", async () => {
-        try {
-            printLog("[GIT] Pushing current branch to origin...");
-            const result = await invoke<string>("push_changes");
-            printLog(`[SUCCESS] ${result}`);
-        } catch (e) {
-            printLog(`[ERR] ${e}`);
+        if (forcePushCheckbox.checked) {
+            forcePushConfirmOverlay.classList.remove("hidden");
+            return;
         }
+
+        await doPush(false);
+    });
+
+    forcePushCheckbox.addEventListener("change", () => {
+        if (forcePushCheckbox.checked) {
+            forceModeConfirmOverlay.classList.remove("hidden");
+            applyForcePushVisualState(false);
+            return;
+        }
+        applyForcePushVisualState(false);
+        printLog("[SYSTEM] Force Push mode disabled.");
+    });
+
+    btnForceModeCancel.addEventListener("click", () => {
+        forceModeConfirmOverlay.classList.add("hidden");
+        applyForcePushVisualState(false);
+        printLog("[SYSTEM] Cancel ForcePush.");
+    });
+
+    btnForceModeConfirm.addEventListener("click", () => {
+        forceModeConfirmOverlay.classList.add("hidden");
+        applyForcePushVisualState(true);
+        printLog("[SYSTEM] Force Push mode enabled.");
+    });
+
+    btnForcePushCancel.addEventListener("click", () => {
+        forcePushConfirmOverlay.classList.add("hidden");
+        printLog("[SYSTEM] Force push canceled.");
+    });
+
+    btnForcePushConfirm.addEventListener("click", async () => {
+        forcePushConfirmOverlay.classList.add("hidden");
+        await doPush(true);
     });
 
     btnQuickDeploy.addEventListener("click", async () => {
@@ -217,13 +271,6 @@ export const setupButtonHandlers = ({
         }
 
         const message = commitMessageEl.value.trim();
-        const validationErr = validateCommitMessage(message);
-
-        if (validationErr) {
-            printLog(`[SYSTEM] ${validationErr}`);
-            return;
-        }
-
         btnQuickDeploy.disabled = true;
 
         try {
@@ -363,6 +410,7 @@ export const setupButtonHandlers = ({
                 stagedListEl.innerHTML = "";
                 remoteListEl.innerHTML = "";
                 btnQuickDeploy.disabled = true;
+                applyForcePushVisualState(false);
                 printLog(`[SYSTEM] Monitoring switched to: ${path}`);
 
                 try {

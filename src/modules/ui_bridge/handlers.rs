@@ -97,10 +97,14 @@ pub async fn commit_changes(
 }
 
 #[tauri::command]
-pub async fn push_changes(state: tauri::State<'_, AppState>) -> Result<String, String> {
+pub async fn push_changes(
+    state: tauri::State<'_, AppState>,
+    force: Option<bool>,
+) -> Result<String, String> {
     let path = get_repo_path(None, &state).await;
+    let force_flag = force.unwrap_or(false);
 
-    tokio::task::spawn_blocking(move || push::push_to_origin(&path))
+    tokio::task::spawn_blocking(move || push::push_to_origin(&path, force_flag))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())

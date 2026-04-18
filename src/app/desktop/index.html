@@ -37,7 +37,34 @@
         <div class="commit-push-buttons">
             <button id="btn-quick-deploy" class="human-git-main-btn quick-deploy-btn" disabled>Quick Deploy</button>
             <button id="btn-commit" class="human-git-main-btn commit-btn">Commit</button>
-            <button id="btn-push" class="human-git-main-btn push-btn">Push</button>
+
+            <div class="push-action-group">
+                <button id="btn-push" class="human-git-main-btn push-btn">Push</button>
+                <label id="force-push-toggle" class="force-push-toggle">
+                    <input id="chk-force-push" type="checkbox">
+                    <span>Force Push</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div id="force-mode-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>This button will open the Force Push mode.<br>Are you sure to open?<br>Cancel ForcePush</p>
+            <div class="confirm-buttons">
+                <button id="btn-force-mode-cancel" class="human-git-main-btn pull-btn">Cancel ForcePush</button>
+                <button id="btn-force-mode-confirm" class="human-git-main-btn pull-btn danger-btn">Open ForcePush</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="force-push-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>WARNING: This will overwrite remote history. Are you sure?</p>
+            <div class="confirm-buttons">
+                <button id="btn-force-push-cancel" class="human-git-main-btn pull-btn">Cancel</button>
+                <button id="btn-force-push-confirm" class="human-git-main-btn pull-btn danger-btn">Force Push</button>
+            </div>
         </div>
     </div>
 

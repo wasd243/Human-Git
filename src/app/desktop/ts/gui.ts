@@ -42,6 +42,14 @@ const btnStageAll = document.getElementById("btn-stage-all")!;
 const btnQuickDeploy = document.getElementById("btn-quick-deploy") as HTMLButtonElement;
 const btnCommit = document.getElementById("btn-commit")!;
 const btnPush = document.getElementById("btn-push")!;
+const forcePushCheckbox = document.getElementById("chk-force-push") as HTMLInputElement;
+const forcePushToggleLabel = document.getElementById("force-push-toggle")!;
+const forceModeConfirmOverlay = document.getElementById("force-mode-confirm-overlay")!;
+const btnForceModeCancel = document.getElementById("btn-force-mode-cancel")!;
+const btnForceModeConfirm = document.getElementById("btn-force-mode-confirm")!;
+const forcePushConfirmOverlay = document.getElementById("force-push-confirm-overlay")!;
+const btnForcePushCancel = document.getElementById("btn-force-push-cancel")!;
+const btnForcePushConfirm = document.getElementById("btn-force-push-confirm")!;
 const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
 
 // staged section
@@ -121,6 +129,14 @@ setupButtonHandlers({
     btnQuickDeploy,
     btnCommit,
     btnPush,
+    forcePushCheckbox,
+    forcePushToggleLabel,
+    forceModeConfirmOverlay,
+    btnForceModeCancel,
+    btnForceModeConfirm,
+    forcePushConfirmOverlay,
+    btnForcePushCancel,
+    btnForcePushConfirm,
     commitMessageEl,
     selectedUnstagedPaths,
     refreshFileList,
