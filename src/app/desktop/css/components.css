@@ -171,12 +171,11 @@ button {
     position: fixed;
     top: 18px;
     right: 20px;
-    z-index: 1000;
-    min-width: 220px;
+    min-width: 200px;
     max-width: min(40vw, 420px);
     padding: 10px 12px;
-    border-radius: 8px;
-    background: rgba(20, 20, 20, 0.32);
+    border-radius: 6px;
+    background: rgba(20, 20, 20, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
