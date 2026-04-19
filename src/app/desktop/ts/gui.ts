@@ -8,6 +8,7 @@ import {printLog} from "./modules/log";
 import {createRefreshFileList} from "./modules/refreshFileList";
 import {setupEventListeners, fetchInitialStats, type MutationPayload} from "./modules/listener";
 import {setupButtonHandlers} from "./modules/buttons";
+import {createRepoContextInfo} from "./modules/El";
 import {invoke} from "@tauri-apps/api/core";
 
 // UI elements
@@ -68,83 +69,8 @@ commitMessageEl.insertAdjacentElement("afterend", stagedSectionEl);
 // local state
 const selectedUnstagedPaths = new Set<string>();
 
-const getBaseName = (path: string) => {
-    const normalized = path.trim().replace(/[\\/]+$/, "");
-    if (!normalized) {
-        return "N/A";
-    }
-
-    const segments = normalized.split(/[\\/]/).filter(Boolean);
-    return segments.length > 0 ? segments[segments.length - 1] : normalized;
-};
-
-const createRepoContextRow = (labelText: string, valueId: string, defaultText: string) => {
-    const row = document.createElement("div");
-    row.className = "repo-context-row";
-
-    const label = document.createElement("span");
-    label.className = "label";
-    label.textContent = labelText;
-
-    const value = document.createElement("span");
-    value.id = valueId;
-    value.className = "value";
-    value.textContent = defaultText;
-
-    row.appendChild(label);
-    row.appendChild(value);
-
-    return {row, value};
-};
-
-const ensureRepoContextInfo = () => {
-    let panel = document.getElementById("repo-context-info");
-    if (!panel) {
-        panel = document.createElement("div");
-        panel.id = "repo-context-info";
-
-        const folderRow = createRepoContextRow("Folder", "repo-context-folder", "No folder selected");
-        const repoRow = createRepoContextRow("Repo", "repo-context-repo", "No repo selected");
-
-        panel.appendChild(folderRow.row);
-        panel.appendChild(repoRow.row);
-        document.body.appendChild(panel);
-
-        return {folderEl: folderRow.value, repoEl: repoRow.value};
-    }
-
-    let folderEl = panel.querySelector("#repo-context-folder") as HTMLElement | null;
-    if (!folderEl) {
-        const folderRow = createRepoContextRow("Folder", "repo-context-folder", "No folder selected");
-        panel.appendChild(folderRow.row);
-        folderEl = folderRow.value;
-    }
-
-    let repoEl = panel.querySelector("#repo-context-repo") as HTMLElement | null;
-    if (!repoEl) {
-        const repoRow = createRepoContextRow("Repo", "repo-context-repo", "No repo selected");
-        panel.appendChild(repoRow.row);
-        repoEl = repoRow.value;
-    }
-
-    return {folderEl, repoEl};
-};
-
-const repoContext = ensureRepoContextInfo();
-
-const updateRepoContextInfo = (path: string | null) => {
-    if (!path) {
-        repoContext.folderEl.textContent = "No folder selected";
-        repoContext.repoEl.textContent = "No repo selected";
-        return;
-    }
-
-    const folderName = getBaseName(path);
-    repoContext.folderEl.textContent = folderName;
-    repoContext.repoEl.textContent = folderName;
-};
-
-updateRepoContextInfo(null);
+const repoContextInfo = createRepoContextInfo();
+repoContextInfo.update(null);
 
 const setStats = (stats: MutationPayload) => {
     insEl.textContent = stats.insertions.toString();
@@ -215,7 +141,7 @@ const buttonHandlers = setupButtonHandlers({
     setStats,
     resetStats,
     printLog,
-    onRepoContextChange: updateRepoContextInfo
+    onRepoContextChange: (path) => repoContextInfo.update(path)
 });
 
 const restoreLastOpenedFolder = async () => {
