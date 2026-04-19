@@ -45,6 +45,7 @@ interface SetupButtonHandlersParams {
     setStats: (stats: MutationPayload) => void;
     resetStats: () => void;
     printLog: (msg: string) => void;
+    onRepoContextChange: (path: string | null) => void;
 }
 
 interface ButtonHandlersApi {
@@ -124,9 +125,22 @@ export const setupButtonHandlers = ({
     refreshFileList,
     setStats,
     resetStats,
-    printLog
+    printLog,
+    onRepoContextChange
 }: SetupButtonHandlersParams) => {
     let activeRepoPath: string | null = null;
+
+    const setActiveRepoPathInternal = (path: string | null) => {
+        if (!path) {
+            activeRepoPath = null;
+            onRepoContextChange(null);
+            return;
+        }
+
+        const trimmedPath = path.trim();
+        activeRepoPath = trimmedPath.length > 0 ? trimmedPath : null;
+        onRepoContextChange(activeRepoPath);
+    };
 
     const applyForcePushVisualState = (enabled: boolean) => {
         forcePushCheckbox.checked = enabled;
@@ -414,7 +428,7 @@ export const setupButtonHandlers = ({
                 printLog(`[SYSTEM] Folder selected: ${path}`);
 
                 await invoke("update_repo_path", {path});
-                activeRepoPath = path;
+                setActiveRepoPathInternal(path);
                 selectedUnstagedPaths.clear();
                 fileListEl.replaceChildren();
                 stagedListEl.replaceChildren();
@@ -442,8 +456,7 @@ export const setupButtonHandlers = ({
 
     return {
         setActiveRepoPath: (path: string) => {
-            const trimmedPath = path.trim();
-            activeRepoPath = trimmedPath.length > 0 ? trimmedPath : null;
+            setActiveRepoPathInternal(path);
         }
     } satisfies ButtonHandlersApi;
 };

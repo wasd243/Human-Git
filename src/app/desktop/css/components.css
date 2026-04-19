@@ -166,3 +166,46 @@ button {
     width: 50%;
     transform: translate(-50%, -50%);
 }
+
+#repo-context-info {
+    position: fixed;
+    top: 18px;
+    right: 20px;
+    z-index: 1000;
+    min-width: 220px;
+    max-width: min(40vw, 420px);
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(20, 20, 20, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: rgba(242, 234, 218, 0.95);
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+#repo-context-info .repo-context-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+#repo-context-info .repo-context-row:last-child {
+    margin-bottom: 0;
+}
+
+#repo-context-info .label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.78;
+    min-width: 54px;
+}
+
+#repo-context-info .value {
+    font-size: 12px;
+    line-height: 1.35;
+    word-break: break-all;
+}

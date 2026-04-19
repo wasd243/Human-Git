@@ -68,6 +68,55 @@ commitMessageEl.insertAdjacentElement("afterend", stagedSectionEl);
 // local state
 const selectedUnstagedPaths = new Set<string>();
 
+const getBaseName = (path: string) => {
+    const normalized = path.trim().replace(/[\\/]+$/, "");
+    if (!normalized) {
+        return "N/A";
+    }
+
+    const segments = normalized.split(/[\\/]/).filter(Boolean);
+    return segments.length > 0 ? segments[segments.length - 1] : normalized;
+};
+
+const ensureRepoContextInfo = () => {
+    let panel = document.getElementById("repo-context-info");
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "repo-context-info";
+        panel.innerHTML = `
+            <div class="repo-context-row">
+                <span class="label">Folder</span>
+                <span id="repo-context-folder" class="value">No folder selected</span>
+            </div>
+            <div class="repo-context-row">
+                <span class="label">Repo</span>
+                <span id="repo-context-repo" class="value">No repo selected</span>
+            </div>
+        `;
+        document.body.appendChild(panel);
+    }
+
+    const folderEl = panel.querySelector("#repo-context-folder") as HTMLElement;
+    const repoEl = panel.querySelector("#repo-context-repo") as HTMLElement;
+    return {folderEl, repoEl};
+};
+
+const repoContext = ensureRepoContextInfo();
+
+const updateRepoContextInfo = (path: string | null) => {
+    if (!path) {
+        repoContext.folderEl.textContent = "No folder selected";
+        repoContext.repoEl.textContent = "No repo selected";
+        return;
+    }
+
+    const folderName = getBaseName(path);
+    repoContext.folderEl.textContent = folderName;
+    repoContext.repoEl.textContent = folderName;
+};
+
+updateRepoContextInfo(null);
+
 const setStats = (stats: MutationPayload) => {
     insEl.textContent = stats.insertions.toString();
     delEl.textContent = stats.deletions.toString();
@@ -136,7 +185,8 @@ const buttonHandlers = setupButtonHandlers({
     refreshFileList,
     setStats,
     resetStats,
-    printLog
+    printLog,
+    onRepoContextChange: updateRepoContextInfo
 });
 
 const restoreLastOpenedFolder = async () => {
