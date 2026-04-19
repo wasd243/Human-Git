@@ -8,6 +8,7 @@ import {printLog} from "./modules/log";
 import {createRefreshFileList} from "./modules/refreshFileList";
 import {setupEventListeners, fetchInitialStats, type MutationPayload} from "./modules/listener";
 import {setupButtonHandlers} from "./modules/buttons";
+import {createRepoContextInfo} from "./modules/El";
 import {invoke} from "@tauri-apps/api/core";
 
 // UI elements
@@ -26,6 +27,12 @@ const btnCloseRightUI = document.getElementById("btn-close-right-ui")!;
 const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 const btnPullAction = document.getElementById("btn-pull-action")!;
+const btnFetchAction = document.getElementById("btn-fetch-action")!;
+const fetchPruneCheckbox = document.getElementById("chk-fetch-prune") as HTMLInputElement;
+const fetchPruneToggleLabel = document.getElementById("fetch-prune-toggle")!;
+const fetchPruneConfirmOverlay = document.getElementById("fetch-prune-confirm-overlay")!;
+const btnFetchPruneCancel = document.getElementById("btn-fetch-prune-cancel")!;
+const btnFetchPruneConfirm = document.getElementById("btn-fetch-prune-confirm")!;
 const btnRemoteAction = document.getElementById("btn-remote-action")!;
 const remoteInputPanel = document.getElementById("remote-input-panel")!;
 const remoteUrlInput = document.getElementById("remote-url-input") as HTMLTextAreaElement;
@@ -68,6 +75,9 @@ commitMessageEl.insertAdjacentElement("afterend", stagedSectionEl);
 // local state
 const selectedUnstagedPaths = new Set<string>();
 
+const repoContextInfo = createRepoContextInfo();
+repoContextInfo.update(null);
+
 const setStats = (stats: MutationPayload) => {
     insEl.textContent = stats.insertions.toString();
     delEl.textContent = stats.deletions.toString();
@@ -106,6 +116,12 @@ const buttonHandlers = setupButtonHandlers({
     btnDoGitInit,
     btnChooseFolder,
     btnPullAction,
+    btnFetchAction,
+    fetchPruneCheckbox,
+    fetchPruneToggleLabel,
+    fetchPruneConfirmOverlay,
+    btnFetchPruneCancel,
+    btnFetchPruneConfirm,
     btnRemoteAction,
     remoteInputPanel,
     remoteUrlInput,
@@ -136,7 +152,8 @@ const buttonHandlers = setupButtonHandlers({
     refreshFileList,
     setStats,
     resetStats,
-    printLog
+    printLog,
+    onRepoContextChange: (path) => repoContextInfo.update(path)
 });
 
 const restoreLastOpenedFolder = async () => {

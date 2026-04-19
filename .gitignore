@@ -1,11 +1,11 @@
-# 编译产物（最重要的）
+# Rust target/
 /target/
 target/
 
 # venv environment
 .venv/
 
-# IDE 垃圾
+# IDE trush
 .idea/
 *.iml
 .vscode/
@@ -19,21 +19,29 @@ node_modules/
 gen/schemas/
 dist/
 
-# 屏蔽 Tauri 自动生成的移动端资源
+# Ignore Tauri generate IOS and Android files
 src-tauri/gen/android/
 src-tauri/gen/ios/
 src-tauri/icons/android/
 src-tauri/icons/ios/
 *.xml
 
-# 操作系统临时文件
+# Window and MacOS files
 .DS_Store
 Thumbs.db
-.aider*
+
+# cache
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v4
 *.db
-# 忽略所有 SQLite 缓存和日志文件
+
+# Ignore all SQL and cache
 *.db-shm
 *.db-wal
 *.db-journal
 humangit_cache.db-shm
 humangit_cache.db-wal
+
+# Aider chat bot cache
+--commit-message-extra-instructions=Always write commit messages in English using Conventional Commits format. DO NOT use Chinese

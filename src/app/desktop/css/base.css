@@ -1,37 +1,37 @@
 body {
     margin: 0;
     padding: 0;
-    /* body 仅保留底色和绢本纹理，作为最底层 */
+    /* Keep only the base color and silk-paper texture on body as the bottom layer */
     background-color: #8D7D49;
     background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px),
     repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 3px);
 }
 
-/* 这是真正的画卷层 */
+/* This is the actual scroll layer */
 #千里江山图 {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1; /* 垫在所有内容的下面 */
+    z-index: -1; /* Place it beneath all content */
 
     background-image: url('../assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg'),
     url('../assets/Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing - 副本.jpg');
-    background-size: auto 100%, auto 100%; /* 两层都按高度撑满 */
+    background-size: auto 100%, auto 100%; /* Both layers fill by height */
     background-repeat: no-repeat, no-repeat;
-    background-position: 0 center, 0 center; /* 第二层位置由 JS 实时更新 */
+    background-position: 0 center, 0 center; /* The second layer position is updated in real time by JS */
 
-    /* 正片叠底，让画卷吃掉底部的绢本质感 */
+    /* Multiply blend mode so the scroll absorbs the silk texture underneath */
     mix-blend-mode: multiply;
 
-    /* 初始暗淡状态 */
+    /* Initial dim state */
     filter: brightness(0.8) contrast(1.1);
-    /* 给 filter 加上平滑过渡 (移除 background-position 过渡以配合 JS 动画) */
+    /* Add smooth transition to filter (remove background-position transition to match JS animation) */
     transition: filter 3s ease-in-out;
 }
 
-/* 激活时的提亮状态 */
+/* Brightened state when active */
 #千里江山图.engine-active {
     filter: brightness(1.2) contrast(1.1);
 }
@@ -45,29 +45,29 @@ body {
     padding: 20px;
 }
 
-/* Splash Banner 样式 */
+/* Splash Banner styles */
 #splash-banner {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 180px; /* 稍微缩小高度，更精致 */
+    height: 180px; /* Slightly reduced height for a more refined look */
     z-index: 1;
     pointer-events: none;
-    overflow: hidden; /* 裁剪溢出的长卷 */
-    /* 基础显示 */
+    overflow: hidden; /* Clip the overflowing long scroll */
+    /* Base display */
     opacity: 1;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 #splash-banner img {
     height: 100%;
-    width: auto; /* 允许图片横向伸展 */
+    width: auto; /* Allow the image to extend horizontally */
     object-fit: contain;
     mix-blend-mode: multiply;
-    transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1); /* 平滑跟随 */
+    transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1); /* Smooth follow motion */
 
-    /* 强化遮罩 */
+    /* Enhanced mask */
     mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0));
     -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0));
 }

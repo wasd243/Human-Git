@@ -1,4 +1,4 @@
-use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, init, pull, push, remote};
+use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, fetch, init, pull, push, remote};
 use crate::modules::repo::{diff, history};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
@@ -70,7 +70,11 @@ pub async fn stage_files(
     paths: Vec<String>,
 ) -> Result<String, String> {
     let path = get_repo_path(None, &state).await?;
-    add::stage_files(&path, paths).map_err(|e| e.to_string())
+
+    tokio::task::spawn_blocking(move || add::stage_files(&path, paths))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -105,6 +109,21 @@ pub async fn pull_changes(state: tauri::State<'_, AppState>) -> Result<String, S
     let path = get_repo_path(None, &state).await?;
 
     tokio::task::spawn_blocking(move || pull::pull_from_origin(&path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn fetch_changes(
+    state: tauri::State<'_, AppState>,
+    remote: Option<String>,
+    prune: Option<bool>,
+) -> Result<String, String> {
+    let path = get_repo_path(None, &state).await?;
+    let prune_enabled = prune.unwrap_or(false);
+
+    tokio::task::spawn_blocking(move || fetch::fetch_from_remote(&path, remote.as_deref(), prune_enabled))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
@@ -172,5 +191,8 @@ pub async fn get_working_status(
 ) -> Result<Vec<history::FileStatus>, String> {
     let repo_path = get_repo_path(None, &state).await?;
 
-    history::get_working_status(&repo_path).map_err(|e| e.to_string())
+    tokio::task::spawn_blocking(move || history::get_working_status(&repo_path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
 }

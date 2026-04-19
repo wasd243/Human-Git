@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use git2::{
     build::CheckoutBuilder, Cred, CredentialType, FetchOptions, MergeAnalysis,
-    RemoteCallbacks, Repository, Signature,
+    RemoteCallbacks, Repository,
 };
 
 pub fn pull_from_origin(repo_path: &str) -> Result<String> {
@@ -105,8 +105,9 @@ pub fn pull_from_origin(repo_path: &str) -> Result<String> {
         let tree = repo
             .find_tree(tree_id)
             .context("Failed to resolve merge tree")?;
-        let signature =
-            Signature::now("HumanGit", "humangit@system.local").context("Failed to build Git signature")?;
+        let signature = repo
+            .signature()
+            .context("Failed to resolve Git identity. Please set user.name and user.email.")?;
         let message = format!("Merge remote-tracking branch 'origin/{}'", branch_name);
 
         repo.commit(

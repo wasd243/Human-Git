@@ -5,7 +5,7 @@
 .monitor-panel {
     display: flex;
     justify-content: space-around;
-    border: 1px solid #ccc; /* 基础线框 */
+    border: 1px solid #ccc; /* Basic border frame */
     padding: 20px 0;
 }
 
@@ -27,25 +27,70 @@
     z-index: 999;
 
     background-color: rgba(255, 255, 255, 0.1);
-    /* 极致磨砂：模糊度不宜过大，8-12px 最佳 */
+    /* Ultra-frosted glass: keep blur moderate, 8-12px works best */
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(10px);
-    /* 使用带透明度的白色，营造一种光线在边缘折射的质感 */
+    /* Use translucent white to create a refracted light feel on the edges */
     border: 1px solid rgba(255, 255, 255, 0.2);
-    /* 细节微调：让边框在深色山水背景下更精致 */
-    border-radius: 4px; /* 极小的圆角，或者 0 像素保持硬朗 */
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); /* 极轻的阴影，增加浮空感 */
+    /* Fine-tuned details: make borders look refined over the dark landscape background */
+    border-radius: 4px; /* Very small corner radius, or 0px to keep a crisp edge */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); /* Very light shadow to add a floating feel */
 
     transition: left 0.4s ease-in-out;
     padding: 80px 20px 20px 20px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    animation: leftUiColorSwitch 2s infinite alternate ease-in-out;
+    gap: 6px;
+    overflow-y: auto;
+    animation: none;
 }
 
 #left-ui.show {
     left: 0;
+}
+
+#left-ui .left-log-entry {
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    word-break: break-word;
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    color: rgba(242, 234, 218, 0.92);
+    text-shadow: none;
+}
+
+#left-ui .left-log-entry.log-system {
+    color: #cfd8dc;
+    border-left-color: rgba(207, 216, 220, 0.6);
+    font-style: italic;
+}
+
+#left-ui .left-log-entry.log-err {
+    color: #ffd8d8;
+    border-left-color: rgba(255, 88, 88, 0.9);
+    background: rgba(120, 0, 0, 0.28);
+    font-weight: 700;
+}
+
+#left-ui .left-log-entry.log-git {
+    color: #b2dfdb;
+    border-left-color: rgba(77, 182, 172, 0.85);
+}
+
+#left-ui .left-log-entry.log-success {
+    color: #c8e6c9;
+    border-left-color: rgba(102, 187, 106, 0.95);
+    background: rgba(27, 94, 32, 0.24);
+}
+
+#left-ui .left-log-entry.log-event {
+    color: #e1bee7;
+    border-left-color: rgba(156, 39, 176, 0.75);
 }
 
 .top-ui {
@@ -72,11 +117,11 @@
 
 @keyframes topUiColorSwitch {
     0% {
-        color: #4dfba6; /* 嫩绿/石绿 */
+        color: #4dfba6; /* Tender green / mineral green */
         text-shadow: 0 0 8px rgba(77, 251, 166, 0.3);
     }
     100% {
-        color: #4de0fb; /* 湖青/石青 */
+        color: #4de0fb; /* Lake cyan / stone cyan */
         text-shadow: 0 0 12px rgba(77, 224, 251, 0.4);
     }
 }
@@ -307,6 +352,13 @@
     box-shadow: 0 0 14px rgba(255, 60, 60, 0.35);
 }
 
+.fetch-btn.prune-danger {
+    border-color: rgba(255, 88, 88, 0.9);
+    color: #ffd8d8;
+    background: rgba(140, 0, 0, 0.35);
+    box-shadow: 0 0 14px rgba(255, 60, 60, 0.35);
+}
+
 .danger-btn {
     border-color: rgba(255, 88, 88, 0.9);
     color: #ffd8d8;
@@ -329,8 +381,15 @@
     width: 80%;
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 14px;
     transform: translateX(-26px);
+}
+
+.fetch-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .remote-input-panel {

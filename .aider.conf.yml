@@ -1,0 +1,5 @@
+commit-message-extra-instructions: "Always write commit messages in English using Conventional Commits format. DO NOT use Chinese."
+
+chat-language: en
+
+model: github_copilot/gpt-5.3-codex

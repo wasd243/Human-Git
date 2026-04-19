@@ -12,6 +12,7 @@ pub mod modules {
         pub mod checkout;
         pub mod commit;
         pub mod commit_and_push;
+        pub mod fetch;
         pub mod init;
         pub mod open_folder;
         pub mod process_mutation;
@@ -79,6 +80,7 @@ async fn main() -> anyhow::Result<()> {
             handlers::commit_and_push,
             handlers::push_changes,
             handlers::pull_changes,
+            handlers::fetch_changes,
             handlers::add_remote_origin,
             handlers::list_remotes,
             handlers::get_working_status,

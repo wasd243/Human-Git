@@ -1,6 +1,7 @@
 use crate::modules::repo::{diff, history};
 use crate::modules::ui_bridge::handlers::MutationPayload;
 use crate::AppState;
+use anyhow::anyhow;
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -34,7 +35,7 @@ pub async fn process_mutation(
                 &format!("Failed to get working status: {}", e),
                 "red",
             );
-            return Ok(());
+            return Err(anyhow!("Failed to get working status: {}", e));
         }
     };
 

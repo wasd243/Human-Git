@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use git2::{ErrorCode, PushOptions, RemoteCallbacks, Repository, Signature};
+use git2::{ErrorCode, PushOptions, RemoteCallbacks, Repository};
 
 use crate::modules::operations::add::stage_all_changes;
 
@@ -74,8 +74,9 @@ pub fn commit_and_push(repo_path: &str, message: Option<&str>) -> Result<String>
     let tree = repo
         .find_tree(tree_id)
         .context("Failed to find written tree")?;
-    let signature =
-        Signature::now("HumanGit", "humangit@system.local").context("Failed to build Git signature")?;
+    let signature = repo
+        .signature()
+        .context("Failed to resolve Git identity. Please set user.name and user.email.")?;
 
     let mut parents = Vec::new();
     if let Ok(head_ref) = repo.head() {

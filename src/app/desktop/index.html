@@ -93,6 +93,15 @@
 
     <div id="pull-panel-area">
         <button id="btn-pull-action" class="human-git-main-btn pull-btn">Pull</button>
+
+        <div class="fetch-action-group">
+            <button id="btn-fetch-action" class="human-git-main-btn pull-btn fetch-btn">Fetch</button>
+            <label id="fetch-prune-toggle" class="force-push-toggle">
+                <input id="chk-fetch-prune" type="checkbox">
+                <span>-p</span>
+            </label>
+        </div>
+
         <button id="btn-remote-action" class="human-git-main-btn pull-btn">Remote</button>
     </div>
 
@@ -117,6 +126,16 @@
             <div class="confirm-buttons">
                 <button id="btn-remote-cancel" class="human-git-main-btn pull-btn">Cancel</button>
                 <button id="btn-remote-confirm" class="human-git-main-btn pull-btn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fetch-prune-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>This action might delete your local branches, double check before you open it.</p>
+            <div class="confirm-buttons">
+                <button id="btn-fetch-prune-cancel" class="human-git-main-btn pull-btn">Cancel -p</button>
+                <button id="btn-fetch-prune-confirm" class="human-git-main-btn pull-btn danger-btn">Open -p</button>
             </div>
         </div>
     </div>
