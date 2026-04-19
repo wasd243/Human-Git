@@ -489,3 +489,44 @@
     justify-content: flex-end;
     gap: 12px;
 }
+
+.ssh-signing-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+}
+
+.ssh-signing-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#ssh-key-select {
+    flex: 1;
+    min-height: 36px;
+    border-radius: 8px;
+    border: 0.5px solid rgba(255,255,255,0.2);
+    background: rgba(20,20,20,0.28);
+    color: rgba(242,234,218,0.95);
+    padding: 8px 10px;
+}
+
+.commit-signing-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.signing-verified-badge {
+    color: rgba(64, 130, 109, 1.0); /* Mineral Green */
+    border: 1px solid rgba(64, 130, 109, 1.0);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}

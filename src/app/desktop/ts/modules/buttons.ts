@@ -46,6 +46,13 @@ interface SetupButtonHandlersParams {
     btnForcePushCancel: HTMLElement;
     btnForcePushConfirm: HTMLElement;
     commitMessageEl: HTMLTextAreaElement;
+    signingEnabledCheckbox: HTMLInputElement;
+    sshKeySelect: HTMLSelectElement;
+    btnPickSshKey: HTMLElement;
+    signingDisableConfirmOverlay: HTMLElement;
+    btnSigningDisableCancel: HTMLElement;
+    btnSigningDisableConfirm: HTMLElement;
+    signingVerifiedBadge: HTMLElement;
     selectedUnstagedPaths: Set<string>;
     refreshFileList: () => Promise<void>;
     setStats: (stats: MutationPayload) => void;
@@ -57,6 +64,15 @@ interface SetupButtonHandlersParams {
 interface ButtonHandlersApi {
     setActiveRepoPath: (path: string) => void;
 }
+
+interface SshKeyInfo {
+    file_name: string;
+    full_path: string;
+    comment: string;
+}
+
+const createKeyLabel = (k: SshKeyInfo) =>
+    k.comment?.trim().length ? `${k.file_name} — ${k.comment}` : k.file_name;
 
 const isValidGitRemoteUrl = (url: string) => /^(https?:\/\/|ssh:\/\/|git@)[^\s]+\.git$/.test(url);
 
@@ -133,6 +149,13 @@ export const setupButtonHandlers = ({
     btnForcePushCancel,
     btnForcePushConfirm,
     commitMessageEl,
+    signingEnabledCheckbox,
+    sshKeySelect,
+    btnPickSshKey,
+    signingDisableConfirmOverlay,
+    btnSigningDisableCancel,
+    btnSigningDisableConfirm,
+    signingVerifiedBadge,
     selectedUnstagedPaths,
     refreshFileList,
     setStats,
@@ -141,6 +164,94 @@ export const setupButtonHandlers = ({
     onRepoContextChange
 }: SetupButtonHandlersParams) => {
     let activeRepoPath: string | null = null;
+    let detectedKeys: SshKeyInfo[] = [];
+    let manualKeyPath: string | null = null;
+
+    const selectedKeyPath = () => {
+        const value = sshKeySelect.value?.trim();
+        if (!value) return null;
+        return value === "__manual__" ? manualKeyPath : value;
+    };
+
+    const updateVerifiedBadge = () => {
+        const show = signingEnabledCheckbox.checked && !!selectedKeyPath();
+        signingVerifiedBadge.classList.toggle("hidden", !show);
+    };
+
+    const renderKeyOptions = () => {
+        const previousValue = sshKeySelect.value;
+        sshKeySelect.replaceChildren();
+
+        if (detectedKeys.length === 0 && !manualKeyPath) {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.textContent = "No SSH key detected";
+            sshKeySelect.appendChild(opt);
+            sshKeySelect.disabled = true;
+            updateVerifiedBadge();
+            return;
+        }
+
+        sshKeySelect.disabled = false;
+
+        for (const key of detectedKeys) {
+            const opt = document.createElement("option");
+            opt.value = key.full_path;
+            opt.textContent = createKeyLabel(key);
+            sshKeySelect.appendChild(opt);
+        }
+
+        if (manualKeyPath) {
+            const opt = document.createElement("option");
+            opt.value = "__manual__";
+            opt.textContent = `Manual key — ${manualKeyPath}`;
+            sshKeySelect.appendChild(opt);
+        }
+
+        if (previousValue) {
+            const hasPrevious = Array.from(sshKeySelect.options).some((o) => o.value === previousValue);
+            if (hasPrevious) {
+                sshKeySelect.value = previousValue;
+            }
+        }
+
+        if (!sshKeySelect.value && sshKeySelect.options.length > 0) {
+            sshKeySelect.selectedIndex = 0;
+        }
+
+        updateVerifiedBadge();
+    };
+
+    const applySigningConfig = async () => {
+        if (!signingEnabledCheckbox.checked) {
+            const result = await invoke<string>("disable_ssh_signing");
+            printLog(`[SUCCESS] ${result}`);
+            updateVerifiedBadge();
+            return;
+        }
+
+        const keyPath = selectedKeyPath();
+        if (!keyPath) {
+            printLog("[SYSTEM] Select an SSH key first.");
+            updateVerifiedBadge();
+            return;
+        }
+
+        const result = await invoke<string>("enable_ssh_signing", {keyPath});
+        printLog(`[SUCCESS] ${result}`);
+        updateVerifiedBadge();
+    };
+
+    const refreshDetectedKeys = async () => {
+        try {
+            detectedKeys = await invoke<SshKeyInfo[]>("detect_ssh_keys");
+            renderKeyOptions();
+        } catch (e) {
+            detectedKeys = [];
+            renderKeyOptions();
+            printLog(`[ERR] Failed to detect SSH keys: ${e}`);
+        }
+    };
 
     const setActiveRepoPathInternal = (path: string | null) => {
         if (!path) {
@@ -209,10 +320,73 @@ export const setupButtonHandlers = ({
 
     applyForcePushVisualState(false);
     applyFetchPruneVisualState(false);
+    void refreshDetectedKeys();
+    updateVerifiedBadge();
+
+    sshKeySelect.addEventListener("change", async () => {
+        updateVerifiedBadge();
+        if (!signingEnabledCheckbox.checked) return;
+        try {
+            await applySigningConfig();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
+
+    btnPickSshKey.addEventListener("click", async () => {
+        try {
+            const picked = await invoke<string | null>("pick_ssh_key_file");
+            if (!picked) {
+                printLog("[SYSTEM] SSH key file selection cancelled.");
+                return;
+            }
+            manualKeyPath = picked;
+            renderKeyOptions();
+            sshKeySelect.value = "__manual__";
+            printLog(`[SYSTEM] Manual SSH key selected: ${picked}`);
+
+            if (signingEnabledCheckbox.checked) {
+                await applySigningConfig();
+            }
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
+
+    signingEnabledCheckbox.addEventListener("change", async () => {
+        if (!signingEnabledCheckbox.checked) {
+            signingDisableConfirmOverlay.classList.remove("hidden");
+            signingEnabledCheckbox.checked = true; // wait for confirm
+            return;
+        }
+
+        try {
+            await applySigningConfig();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
+
+    btnSigningDisableCancel.addEventListener("click", () => {
+        signingDisableConfirmOverlay.classList.add("hidden");
+        signingEnabledCheckbox.checked = true;
+        updateVerifiedBadge();
+    });
+
+    btnSigningDisableConfirm.addEventListener("click", async () => {
+        signingDisableConfirmOverlay.classList.add("hidden");
+        signingEnabledCheckbox.checked = false;
+        try {
+            await applySigningConfig();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
 
     btnShowChanges.addEventListener("click", () => {
         topUI.classList.add("show");
         hideMainButtons();
+        void refreshDetectedKeys();
         void refreshFileList();
     });
 
@@ -220,6 +394,7 @@ export const setupButtonHandlers = ({
         topUI.classList.remove("show");
         forceModeConfirmOverlay.classList.add("hidden");
         forcePushConfirmOverlay.classList.add("hidden");
+        signingDisableConfirmOverlay.classList.add("hidden");
         showMainButtons();
     });
 
@@ -508,6 +683,15 @@ export const setupButtonHandlers = ({
                 } catch (_statsErr) {
                     resetStats();
                     printLog("[SYSTEM] Selected folder is not a Git repository yet.");
+                }
+
+                await refreshDetectedKeys();
+                if (signingEnabledCheckbox.checked && selectedKeyPath()) {
+                    try {
+                        await applySigningConfig();
+                    } catch (e) {
+                        printLog(`[ERR] ${e}`);
+                    }
                 }
 
                 await refreshRemoteList();

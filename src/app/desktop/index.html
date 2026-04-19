@@ -31,9 +31,28 @@
 
     <div id="commit-push-area">
         <textarea id="commit-message" placeholder="Type your commit message here..."></textarea>
+
+        <div id="ssh-signing-section" class="ssh-signing-section">
+            <div class="ssh-signing-header">
+                <label id="ssh-signing-toggle" class="force-push-toggle">
+                    <input id="chk-signing-enabled" type="checkbox" checked>
+                    <span>SSH Signing</span>
+                </label>
+            </div>
+
+            <div class="ssh-signing-controls">
+                <select id="ssh-key-select"></select>
+                <button id="btn-pick-ssh-key" class="human-git-main-btn stage-btn" type="button">Pick Key File</button>
+            </div>
+        </div>
+
         <div class="commit-push-buttons">
             <button id="btn-quick-deploy" class="human-git-main-btn quick-deploy-btn" disabled>Quick Deploy</button>
-            <button id="btn-commit" class="human-git-main-btn commit-btn">Commit</button>
+
+            <div class="commit-signing-wrap">
+                <button id="btn-commit" class="human-git-main-btn commit-btn">Commit</button>
+                <span id="signing-verified-badge" class="signing-verified-badge hidden">Verified</span>
+            </div>
 
             <div class="push-action-group">
                 <button id="btn-push" class="human-git-main-btn push-btn">Push</button>
@@ -61,6 +80,16 @@
             <div class="confirm-buttons">
                 <button id="btn-force-push-cancel" class="human-git-main-btn pull-btn">Cancel</button>
                 <button id="btn-force-push-confirm" class="human-git-main-btn pull-btn danger-btn">Force Push</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="signing-disable-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>Disable signing? Your commits will not be “Verified” on platforms like GitHub.</p>
+            <div class="confirm-buttons">
+                <button id="btn-signing-disable-cancel" class="human-git-main-btn pull-btn">Keep Signing</button>
+                <button id="btn-signing-disable-confirm" class="human-git-main-btn pull-btn danger-btn">Disable</button>
             </div>
         </div>
     </div>
