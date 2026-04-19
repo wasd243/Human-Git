@@ -1,6 +1,6 @@
 PRAGMA journal_mode = WAL;
 
--- HumanGit 基础缓存表
+-- HumanGit cache
 CREATE TABLE IF NOT EXISTS commits_cache
 (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
