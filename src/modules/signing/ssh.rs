@@ -38,6 +38,37 @@ fn parse_pub_comment(pub_contents: &str) -> String {
     }
 }
 
+fn normalize_private_key_path(input_path: &str) -> Result<PathBuf, String> {
+    let trimmed = input_path.trim();
+    if trimmed.is_empty() {
+        return Err("SSH key path cannot be empty.".to_string());
+    }
+
+    let provided = PathBuf::from(trimmed);
+    if !provided.is_file() {
+        return Err(format!("SSH key file not found: {}", trimmed));
+    }
+
+    let is_pub = provided
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("pub"));
+
+    if !is_pub {
+        return Ok(provided);
+    }
+
+    let private_path = provided.with_extension("");
+    if private_path.is_file() {
+        return Ok(private_path);
+    }
+
+    Err(format!(
+        "Selected file is a public key and matching private key was not found: {}",
+        private_path.display()
+    ))
+}
+
 async fn current_repo_path_from_state(state: &tauri::State<'_, AppState>) -> Result<String, String> {
     let guard = state.current_repo_path.lock().await;
     guard
@@ -66,8 +97,12 @@ pub async fn detect_ssh_keys() -> Result<Vec<SshKeyInfo>, String> {
             continue;
         }
 
-        // use *.pub as source of truth so we can extract comment
-        if path.extension().and_then(|e| e.to_str()) != Some("pub") {
+        // Use public keys as source of truth so we can extract comments and map to private keys.
+        if !path
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("pub"))
+        {
             continue;
         }
 
@@ -110,13 +145,8 @@ pub async fn enable_ssh_signing(
     state: tauri::State<'_, AppState>,
     key_path: String,
 ) -> Result<String, String> {
-    let key_path = key_path.trim();
-    if key_path.is_empty() {
-        return Err("SSH key path cannot be empty.".to_string());
-    }
-    if !Path::new(key_path).is_file() {
-        return Err(format!("SSH key file not found: {}", key_path));
-    }
+    let private_key_path = normalize_private_key_path(&key_path)?;
+    let private_key_path = private_key_path.to_string_lossy().to_string();
 
     let repo_path = current_repo_path_from_state(&state).await?;
     let repo = Repository::discover(&repo_path).map_err(|e| format!("Failed to open repository: {}", e))?;
@@ -124,12 +154,15 @@ pub async fn enable_ssh_signing(
 
     cfg.set_str("gpg.format", "ssh")
         .map_err(|e| format!("Failed to set gpg.format: {}", e))?;
-    cfg.set_str("user.signingkey", key_path)
+    cfg.set_str("user.signingkey", &private_key_path)
         .map_err(|e| format!("Failed to set user.signingkey: {}", e))?;
     cfg.set_bool("commit.gpgsign", true)
         .map_err(|e| format!("Failed to set commit.gpgsign: {}", e))?;
 
-    Ok(format!("SSH commit signing enabled with key: {}", key_path))
+    Ok(format!(
+        "SSH commit signing enabled with key: {}",
+        private_key_path
+    ))
 }
 
 #[tauri::command]
