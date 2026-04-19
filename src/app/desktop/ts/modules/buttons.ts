@@ -175,6 +175,24 @@ export const setupButtonHandlers = ({
         }
     };
 
+    const invokeFetchWithFallback = async (): Promise<string> => {
+        try {
+            return await invoke<string>("fetch_changes");
+        } catch (err) {
+            const message = String(err ?? "");
+            const commandMissing =
+                message.includes("Command fetch_changes not found") ||
+                message.includes("command fetch_changes not found") ||
+                message.includes("unknown command");
+
+            if (!commandMissing) {
+                throw err;
+            }
+
+            return await invoke<string>("fetchChanges");
+        }
+    };
+
     const showMainButtons = () => {
         (btnGitInit as HTMLButtonElement).style.display = "";
         (btnOpenPullUI as HTMLButtonElement).style.display = "";
@@ -358,7 +376,7 @@ export const setupButtonHandlers = ({
         printLog("[GIT] Fetching from origin...");
 
         try {
-            const result = await invoke<string>("fetch_changes");
+            const result = await invokeFetchWithFallback();
             printLog(`[SUCCESS] ${result}`);
             await refreshRemoteList();
         } catch (e) {
