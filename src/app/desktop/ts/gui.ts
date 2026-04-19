@@ -27,6 +27,7 @@ const btnCloseRightUI = document.getElementById("btn-close-right-ui")!;
 const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 const btnPullAction = document.getElementById("btn-pull-action")!;
+const btnFetchAction = document.getElementById("btn-fetch-action")!;
 const btnRemoteAction = document.getElementById("btn-remote-action")!;
 const remoteInputPanel = document.getElementById("remote-input-panel")!;
 const remoteUrlInput = document.getElementById("remote-url-input") as HTMLTextAreaElement;
@@ -110,6 +111,7 @@ const buttonHandlers = setupButtonHandlers({
     btnDoGitInit,
     btnChooseFolder,
     btnPullAction,
+    btnFetchAction,
     btnRemoteAction,
     remoteInputPanel,
     remoteUrlInput,

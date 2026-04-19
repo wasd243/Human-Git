@@ -14,6 +14,7 @@ interface SetupButtonHandlersParams {
     btnDoGitInit: HTMLElement;
     btnChooseFolder: HTMLElement;
     btnPullAction: HTMLElement;
+    btnFetchAction: HTMLElement;
     btnRemoteAction: HTMLElement;
     remoteInputPanel: HTMLElement;
     remoteUrlInput: HTMLTextAreaElement;
@@ -95,6 +96,7 @@ export const setupButtonHandlers = ({
     btnDoGitInit,
     btnChooseFolder,
     btnPullAction,
+    btnFetchAction,
     btnRemoteAction,
     remoteInputPanel,
     remoteUrlInput,
@@ -347,6 +349,18 @@ export const setupButtonHandlers = ({
             const result = await invoke<string>("pull_changes");
             printLog(`[SUCCESS] ${result}`);
             await refreshFileList();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
+
+    btnFetchAction.addEventListener("click", async () => {
+        printLog("[GIT] Fetching from origin...");
+
+        try {
+            const result = await invoke<string>("fetch_changes");
+            printLog(`[SUCCESS] ${result}`);
+            await refreshRemoteList();
         } catch (e) {
             printLog(`[ERR] ${e}`);
         }
