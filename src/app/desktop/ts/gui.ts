@@ -78,26 +78,55 @@ const getBaseName = (path: string) => {
     return segments.length > 0 ? segments[segments.length - 1] : normalized;
 };
 
+const createRepoContextRow = (labelText: string, valueId: string, defaultText: string) => {
+    const row = document.createElement("div");
+    row.className = "repo-context-row";
+
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = labelText;
+
+    const value = document.createElement("span");
+    value.id = valueId;
+    value.className = "value";
+    value.textContent = defaultText;
+
+    row.appendChild(label);
+    row.appendChild(value);
+
+    return {row, value};
+};
+
 const ensureRepoContextInfo = () => {
     let panel = document.getElementById("repo-context-info");
     if (!panel) {
         panel = document.createElement("div");
         panel.id = "repo-context-info";
-        panel.innerHTML = `
-            <div class="repo-context-row">
-                <span class="label">Folder</span>
-                <span id="repo-context-folder" class="value">No folder selected</span>
-            </div>
-            <div class="repo-context-row">
-                <span class="label">Repo</span>
-                <span id="repo-context-repo" class="value">No repo selected</span>
-            </div>
-        `;
+
+        const folderRow = createRepoContextRow("Folder", "repo-context-folder", "No folder selected");
+        const repoRow = createRepoContextRow("Repo", "repo-context-repo", "No repo selected");
+
+        panel.appendChild(folderRow.row);
+        panel.appendChild(repoRow.row);
         document.body.appendChild(panel);
+
+        return {folderEl: folderRow.value, repoEl: repoRow.value};
     }
 
-    const folderEl = panel.querySelector("#repo-context-folder") as HTMLElement;
-    const repoEl = panel.querySelector("#repo-context-repo") as HTMLElement;
+    let folderEl = panel.querySelector("#repo-context-folder") as HTMLElement | null;
+    if (!folderEl) {
+        const folderRow = createRepoContextRow("Folder", "repo-context-folder", "No folder selected");
+        panel.appendChild(folderRow.row);
+        folderEl = folderRow.value;
+    }
+
+    let repoEl = panel.querySelector("#repo-context-repo") as HTMLElement | null;
+    if (!repoEl) {
+        const repoRow = createRepoContextRow("Repo", "repo-context-repo", "No repo selected");
+        panel.appendChild(repoRow.row);
+        repoEl = repoRow.value;
+    }
+
     return {folderEl, repoEl};
 };
 

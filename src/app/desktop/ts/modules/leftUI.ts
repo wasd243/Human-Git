@@ -3,7 +3,12 @@ export function leftUI() {
     if (!triggerBtn) {
         triggerBtn = document.createElement("button");
         triggerBtn.id = "top-left-sync-btn";
-        triggerBtn.innerHTML = `<span class="gear-icon">⚙</span>`;
+
+        const gearIcon = document.createElement("span");
+        gearIcon.className = "gear-icon";
+        gearIcon.textContent = "⚙";
+
+        triggerBtn.appendChild(gearIcon);
         document.body.appendChild(triggerBtn);
     }
 
