@@ -39,6 +39,8 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
             }
         };
 
+        let current_dir_str = current_dir.to_string_lossy().to_string();
+
         log_raw(&format!("[SYSTEM] Starting watcher for: {:?}", current_dir));
 
         let mut builder = GitignoreBuilder::new(&current_dir);
@@ -74,7 +76,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
             }
         };
 
-        match history::get_commit_history(current_dir.to_str().unwrap_or(".")) {
+        match history::get_commit_history(&current_dir_str) {
             Ok(commits) => {
                 log_raw("--------------------------------------------------");
                 log_color_fn("[GIT]", "Recent Commit History:", "cyan");
@@ -90,7 +92,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
             Err(e) => log_color_fn("[ERR]", &format!("Failed to get history: {}", e), "red"),
         }
 
-        match history::get_working_status(current_dir.to_str().unwrap_or(".")) {
+        match history::get_working_status(&current_dir_str) {
             Ok(statuses) => {
                 let has_changes = history::has_changes(&statuses);
                 if has_changes {
@@ -104,9 +106,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                         log_raw(&format!("  [{} {}] {}", status.x, status.y, status.path));
                     }
 
-                    if let Ok(files) =
-                        history::get_uncommitted_files(current_dir.to_str().unwrap_or("."))
-                    {
+                    if let Ok(files) = history::get_uncommitted_files(&current_dir_str) {
                         if !files.is_empty() {
                             log_color_fn(
                                 "[FILES]",
@@ -133,7 +133,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
             ),
         }
 
-        match diff::get_stats(current_dir.to_str().unwrap_or(".")) {
+        match diff::get_stats(&current_dir_str) {
             Ok(stats) => {
                 let state = app_handle.state::<AppState>();
                 let mut total_lines = state.total_lines.lock().await;
@@ -191,6 +191,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
         log_color_fn("[SUCCESS]", "HumanGit is now visually active.", "green");
 
         let watcher_dir = current_dir.clone();
+        let watcher_dir_str = watcher_dir.to_string_lossy().to_string();
         let mut last_modified_map: HashMap<std::path::PathBuf, SystemTime> = HashMap::new();
 
         loop {
@@ -233,7 +234,7 @@ pub async fn run_daemon(app_handle: AppHandle) -> anyhow::Result<()> {
                                         let _ = app_handle.emit("files-changed", true);
                                         log_color_fn("[SYSTEM]", "Files changed, notifying UI...", "cyan");
 
-                                        if let Err(e) = process_mutation(mutated_paths, watcher_dir.to_str().unwrap_or("."), &app_handle).await {
+                                        if let Err(e) = process_mutation(mutated_paths, &watcher_dir_str, &app_handle).await {
                                             log_color_fn("[ERR]", &format!("Failed to process mutation: {}", e), "red");
                                         }
                                     }

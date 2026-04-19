@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use git2::{AutotagOption, FetchOptions, FetchPrune, Repository};
+use git2::{AutotagOption, Cred, FetchOptions, FetchPrune, RemoteCallbacks, Repository};
 
 pub fn fetch_from_remote(repo_path: &str, remote_name: Option<&str>, prune: bool) -> Result<String> {
     let remote_name = remote_name.unwrap_or("origin").trim();
@@ -14,8 +14,28 @@ pub fn fetch_from_remote(repo_path: &str, remote_name: Option<&str>, prune: bool
 
     let remote_url = remote.url().unwrap_or("<no-url>").to_string();
 
+    let config = repo
+        .config()
+        .context("Failed to load Git config for authentication")?;
+
+    let mut callbacks = RemoteCallbacks::new();
+    callbacks.credentials(move |url, username_from_url, _allowed_types| {
+        if let Ok(cred) = Cred::credential_helper(&config, url, username_from_url) {
+            return Ok(cred);
+        }
+
+        if let Some(username) = username_from_url {
+            if let Ok(cred) = Cred::ssh_key_from_agent(username) {
+                return Ok(cred);
+            }
+        }
+
+        Cred::default()
+    });
+
     let mut fetch_options = FetchOptions::new();
     fetch_options.download_tags(AutotagOption::All);
+    fetch_options.remote_callbacks(callbacks);
 
     if prune {
         fetch_options.prune(FetchPrune::On);
