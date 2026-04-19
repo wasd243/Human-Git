@@ -20,7 +20,7 @@
    - **Impact:** Commit attribution is inaccurate and inconsistent with user environment.
    - **Evidence:** `Signature::now("HumanGit", "humangit@system.local")` in `src/modules/operations/commit.rs:11`, `init.rs:42`, `commit_and_push.rs:78`, `pull.rs:109`.
 
-3. **Periodic file list refresh can overlap and queue concurrent invokes.**
+3. **[Update later]Periodic file list refresh can overlap and queue concurrent invokes.**
    - **Impact:** Unnecessary backend load and occasional UI state jitter under slow repositories.
    - **Evidence:** `src/app/desktop/ts/gui.ts:194-198` uses `setInterval(async () => await refreshFileList(), 1000)` with no in-flight guard.
 
