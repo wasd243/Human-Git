@@ -1,14 +1,6 @@
-/* Give that pale log panel a more premium look */
+/* Legacy log panel is removed in favor of #left-ui */
 #console-output {
-    height: 150px;
-    overflow-y: auto;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    padding: 10px;
-    font-size: 0.9rem;
-    /* Replace the pure white background with a translucent black base or fully transparent */
-    background: rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(2px);
-    border-radius: 4px;
+    display: none !important;
 }
 
 /* Log color styles */
