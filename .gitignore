@@ -33,6 +33,7 @@ Thumbs.db
 # cache
 .aider.chat.history.md
 .aider.input.history
+.aider.tags.cache.v4
 *.db
 
 # Ignore all SQL and cache
@@ -43,4 +44,4 @@ humangit_cache.db-shm
 humangit_cache.db-wal
 
 # Aider chat bot cache
---commit-message-extra-instructions=Always write commit messages in English using Conventional Commits format. DO NOT use Chinese in any part of the commit
+--commit-message-extra-instructions=Always write commit messages in English using Conventional Commits format. DO NOT use Chinese
