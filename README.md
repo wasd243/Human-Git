@@ -2,6 +2,8 @@
 
 *An auto git tool made by human.*
 
+*In alpha version.*
+
 **Status:** This project is currently in development and hasn't published any releases yet.
 **License:** This project is licensed under the AGPLv3 License.
 
