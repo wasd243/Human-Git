@@ -24,3 +24,7 @@ Currently, Human-Git is actively under development to provide robust background 
 Human-Git 是一款自动化的 Git 跟踪和同步工具，旨在简化您的开发工作流。它在后台默默监控您的编码活动，实时检测文件变动，并通过优雅的桌面用户界面，直观、实时地展示您的代码增删情况。
 
 目前，Human-Git 正处于活跃开发阶段，致力于提供稳健的后台处理、去抖动机制以及与 Tauri UI 的无缝集成。
+
+
+
+
