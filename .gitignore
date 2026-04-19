@@ -29,7 +29,9 @@ src-tauri/icons/ios/
 # Window and MacOS files
 .DS_Store
 Thumbs.db
-.aider*
+# cache
+.aider.chat.history.md
+.aider.input.history
 *.db
 # Ignore all SQL and cache
 *.db-shm
