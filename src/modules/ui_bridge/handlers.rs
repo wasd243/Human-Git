@@ -70,7 +70,11 @@ pub async fn stage_files(
     paths: Vec<String>,
 ) -> Result<String, String> {
     let path = get_repo_path(None, &state).await?;
-    add::stage_files(&path, paths).map_err(|e| e.to_string())
+
+    tokio::task::spawn_blocking(move || add::stage_files(&path, paths))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -187,5 +191,8 @@ pub async fn get_working_status(
 ) -> Result<Vec<history::FileStatus>, String> {
     let repo_path = get_repo_path(None, &state).await?;
 
-    history::get_working_status(&repo_path).map_err(|e| e.to_string())
+    tokio::task::spawn_blocking(move || history::get_working_status(&repo_path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
 }
