@@ -38,7 +38,6 @@ pub mod modules {
         }
     }
     pub mod signing {
-        pub mod gpg;
         pub mod ssh;
     }
     pub mod watcher;
