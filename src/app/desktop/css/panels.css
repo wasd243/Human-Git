@@ -352,6 +352,13 @@
     box-shadow: 0 0 14px rgba(255, 60, 60, 0.35);
 }
 
+.fetch-btn.prune-danger {
+    border-color: rgba(255, 88, 88, 0.9);
+    color: #ffd8d8;
+    background: rgba(140, 0, 0, 0.35);
+    box-shadow: 0 0 14px rgba(255, 60, 60, 0.35);
+}
+
 .danger-btn {
     border-color: rgba(255, 88, 88, 0.9);
     color: #ffd8d8;
@@ -374,8 +381,15 @@
     width: 80%;
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 14px;
     transform: translateX(-26px);
+}
+
+.fetch-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .remote-input-panel {

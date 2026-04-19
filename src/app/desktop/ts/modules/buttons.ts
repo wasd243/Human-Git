@@ -15,6 +15,11 @@ interface SetupButtonHandlersParams {
     btnChooseFolder: HTMLElement;
     btnPullAction: HTMLElement;
     btnFetchAction: HTMLElement;
+    fetchPruneCheckbox: HTMLInputElement;
+    fetchPruneToggleLabel: HTMLElement;
+    fetchPruneConfirmOverlay: HTMLElement;
+    btnFetchPruneCancel: HTMLElement;
+    btnFetchPruneConfirm: HTMLElement;
     btnRemoteAction: HTMLElement;
     remoteInputPanel: HTMLElement;
     remoteUrlInput: HTMLTextAreaElement;
@@ -97,6 +102,11 @@ export const setupButtonHandlers = ({
     btnChooseFolder,
     btnPullAction,
     btnFetchAction,
+    fetchPruneCheckbox,
+    fetchPruneToggleLabel,
+    fetchPruneConfirmOverlay,
+    btnFetchPruneCancel,
+    btnFetchPruneConfirm,
     btnRemoteAction,
     remoteInputPanel,
     remoteUrlInput,
@@ -150,6 +160,12 @@ export const setupButtonHandlers = ({
         btnPush.classList.toggle("force-danger", enabled);
     };
 
+    const applyFetchPruneVisualState = (enabled: boolean) => {
+        fetchPruneCheckbox.checked = enabled;
+        fetchPruneToggleLabel.classList.toggle("danger", enabled);
+        btnFetchAction.classList.toggle("prune-danger", enabled);
+    };
+
     const doPush = async (force: boolean) => {
         try {
             if (force) {
@@ -175,8 +191,8 @@ export const setupButtonHandlers = ({
         }
     };
 
-    const invokeFetch = async (): Promise<string> => {
-        return await invoke<string>("fetch_changes", {remote: "origin"});
+    const invokeFetch = async (prune: boolean): Promise<string> => {
+        return await invoke<string>("fetch_changes", {remote: "origin", prune});
     };
 
     const showMainButtons = () => {
@@ -192,6 +208,7 @@ export const setupButtonHandlers = ({
     };
 
     applyForcePushVisualState(false);
+    applyFetchPruneVisualState(false);
 
     btnShowChanges.addEventListener("click", () => {
         topUI.classList.add("show");
@@ -324,6 +341,7 @@ export const setupButtonHandlers = ({
         rightUI.classList.add("show");
         pullConfirmOverlay.classList.add("hidden");
         remoteConfirmOverlay.classList.add("hidden");
+        fetchPruneConfirmOverlay.classList.add("hidden");
         remoteInputPanel.classList.add("hidden");
         hideMainButtons();
         void refreshRemoteList();
@@ -333,6 +351,7 @@ export const setupButtonHandlers = ({
         rightUI.classList.remove("show");
         pullConfirmOverlay.classList.add("hidden");
         remoteConfirmOverlay.classList.add("hidden");
+        fetchPruneConfirmOverlay.classList.add("hidden");
         remoteInputPanel.classList.add("hidden");
         showMainButtons();
     });
@@ -358,11 +377,38 @@ export const setupButtonHandlers = ({
         }
     });
 
+    fetchPruneCheckbox.addEventListener("change", () => {
+        if (fetchPruneCheckbox.checked) {
+            fetchPruneConfirmOverlay.classList.remove("hidden");
+            applyFetchPruneVisualState(false);
+            return;
+        }
+        applyFetchPruneVisualState(false);
+        printLog("[SYSTEM] Fetch prune mode (-p) disabled.");
+    });
+
+    btnFetchPruneCancel.addEventListener("click", () => {
+        fetchPruneConfirmOverlay.classList.add("hidden");
+        applyFetchPruneVisualState(false);
+        printLog("[SYSTEM] Cancel enabling fetch prune mode (-p).");
+    });
+
+    btnFetchPruneConfirm.addEventListener("click", () => {
+        fetchPruneConfirmOverlay.classList.add("hidden");
+        applyFetchPruneVisualState(true);
+        printLog("[SYSTEM] Fetch prune mode (-p) enabled.");
+    });
+
     btnFetchAction.addEventListener("click", async () => {
-        printLog("[GIT] Fetching from origin...");
+        const prune = fetchPruneCheckbox.checked;
+        if (prune) {
+            printLog("[GIT] Fetching from origin with prune (-p)...");
+        } else {
+            printLog("[GIT] Fetching from origin...");
+        }
 
         try {
-            const result = await invokeFetch();
+            const result = await invokeFetch(prune);
             printLog(`[SUCCESS] ${result}`);
             await refreshRemoteList();
         } catch (e) {
@@ -453,6 +499,7 @@ export const setupButtonHandlers = ({
                 remoteListEl.replaceChildren();
                 btnQuickDeploy.disabled = true;
                 applyForcePushVisualState(false);
+                applyFetchPruneVisualState(false);
                 printLog(`[SYSTEM] Monitoring switched to: ${path}`);
 
                 try {

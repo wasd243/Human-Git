@@ -28,6 +28,11 @@ const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 const btnPullAction = document.getElementById("btn-pull-action")!;
 const btnFetchAction = document.getElementById("btn-fetch-action")!;
+const fetchPruneCheckbox = document.getElementById("chk-fetch-prune") as HTMLInputElement;
+const fetchPruneToggleLabel = document.getElementById("fetch-prune-toggle")!;
+const fetchPruneConfirmOverlay = document.getElementById("fetch-prune-confirm-overlay")!;
+const btnFetchPruneCancel = document.getElementById("btn-fetch-prune-cancel")!;
+const btnFetchPruneConfirm = document.getElementById("btn-fetch-prune-confirm")!;
 const btnRemoteAction = document.getElementById("btn-remote-action")!;
 const remoteInputPanel = document.getElementById("remote-input-panel")!;
 const remoteUrlInput = document.getElementById("remote-url-input") as HTMLTextAreaElement;
@@ -112,6 +117,11 @@ const buttonHandlers = setupButtonHandlers({
     btnChooseFolder,
     btnPullAction,
     btnFetchAction,
+    fetchPruneCheckbox,
+    fetchPruneToggleLabel,
+    fetchPruneConfirmOverlay,
+    btnFetchPruneCancel,
+    btnFetchPruneConfirm,
     btnRemoteAction,
     remoteInputPanel,
     remoteUrlInput,

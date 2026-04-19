@@ -114,10 +114,12 @@ pub async fn pull_changes(state: tauri::State<'_, AppState>) -> Result<String, S
 pub async fn fetch_changes(
     state: tauri::State<'_, AppState>,
     remote: Option<String>,
+    prune: Option<bool>,
 ) -> Result<String, String> {
     let path = get_repo_path(None, &state).await?;
+    let prune_enabled = prune.unwrap_or(false);
 
-    tokio::task::spawn_blocking(move || fetch::fetch_from_remote(&path, remote.as_deref()))
+    tokio::task::spawn_blocking(move || fetch::fetch_from_remote(&path, remote.as_deref(), prune_enabled))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
