@@ -5,6 +5,7 @@ This project gratefully acknowledges the following resources and contributions:
 ## Visual Arts
 * **A Thousand Li of Rivers and Mountains (千里江山图)**
     * **Author:** Wang Ximeng in Song Dynasty (【宋】王希孟)
+    * **Image Source:** Digital Archive of the **Palace Museum (故宫博物院)**.
     * **Source:** High-resolution digital scan for cultural preservation.
     * **License:** Public Domain. Used here for non-commercial, aesthetic, and educational purposes.
 
