@@ -21,6 +21,8 @@ pub fn fetch_from_remote(repo_path: &str, remote_name: Option<&str>) -> Result<S
         .fetch(&[] as &[&str], Some(&mut fetch_options), None)
         .with_context(|| format!("Failed to fetch from remote '{}'", remote_name))?;
 
+    println!("Fetch completed from '{}' ({})", remote_name, remote_url);
+
     Ok(format!(
         "Fetch completed from '{}' ({})",
         remote_name, remote_url
