@@ -12,21 +12,21 @@
 
 ## NEED FIX
 
-1. **Blocking Git calls are still executed directly in async Tauri handlers.**
+1. **[COMPLETED] Blocking Git calls are still executed directly in async Tauri handlers.**
    - **Impact:** UI responsiveness can degrade on large repositories.
-   - **Evidence:** `src/modules/ui_bridge/handlers.rs:73` (`add::stage_files`) and `:190` (`history::get_working_status`) run without `tokio::task::spawn_blocking`.
+   - **Evidence:** Fixed in `src/modules/ui_bridge/handlers.rs:74-77` (`stage_files`) and `:194-197` (`get_working_status`) by wrapping both with `tokio::task::spawn_blocking`.
 
-2. **Commit author/committer is hardcoded and ignores repository/user Git identity.**
+2. **[COMPLETED] Commit author/committer is hardcoded and ignores repository/user Git identity.**
    - **Impact:** Commit attribution is inaccurate and inconsistent with user environment.
-   - **Evidence:** `Signature::now("HumanGit", "humangit@system.local")` in `src/modules/operations/commit.rs:11`, `init.rs:42`, `commit_and_push.rs:78`, `pull.rs:109`.
+   - **Evidence:** Fixed by replacing hardcoded signatures with `repo.signature()` in `src/modules/operations/commit.rs:11-13`, `init.rs:44-46`, `commit_and_push.rs:77-79`, and `pull.rs:108-110`.
 
 3. **[Update later]Periodic file list refresh can overlap and queue concurrent invokes.**
    - **Impact:** Unnecessary backend load and occasional UI state jitter under slow repositories.
    - **Evidence:** `src/app/desktop/ts/gui.ts:194-198` uses `setInterval(async () => await refreshFileList(), 1000)` with no in-flight guard.
 
-4. **`process_mutation` swallows status-read failures and returns success-shaped result.**
+4. **[COMPLETED] `process_mutation` swallows status-read failures and returns success-shaped result.**
    - **Impact:** Mutation processing can silently skip real updates while outer loop sees no error.
-   - **Evidence:** `src/modules/operations/process_mutation.rs:29-38` logs error then `return Ok(())`.
+   - **Evidence:** Fixed in `src/modules/operations/process_mutation.rs:30-39`; on status-read failure it now returns `Err(anyhow!(...))` after logging.
 
 ## NOT MATTER
 
