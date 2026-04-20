@@ -74,7 +74,20 @@ interface SshKeyInfo {
 const createKeyLabel = (k: SshKeyInfo) =>
     k.comment?.trim().length ? `${k.file_name} — ${k.comment}` : k.file_name;
 
-const isValidGitRemoteUrl = (url: string) => /^(https?:\/\/|ssh:\/\/|git@)[^\s]+\.git$/.test(url);
+const isValidGitRemoteUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed || /\s/.test(trimmed)) {
+        return false;
+    }
+
+    // Supports standard remote formats:
+    // - https://host/owner/repo(.git)
+    // - ssh://...
+    // - git://...
+    // - git@host:owner/repo(.git)
+    return /^(https?:\/\/|ssh:\/\/|git:\/\/)[^\s]+$/.test(trimmed)
+        || /^git@[^:\s]+:[^\s]+$/.test(trimmed);
+};
 
 const createRemoteMessageRow = (message: string) => {
     const row = document.createElement("div");
@@ -595,7 +608,7 @@ export const setupButtonHandlers = ({
         if (remoteInputPanel.classList.contains("hidden")) {
             remoteInputPanel.classList.remove("hidden");
             remoteUrlInput.focus();
-            printLog("[SYSTEM] Enter remote URL ending with .git, then click Remote again.");
+            printLog("[SYSTEM] Enter a valid remote URL, then click Remote again.");
             return;
         }
 
@@ -606,7 +619,7 @@ export const setupButtonHandlers = ({
         }
 
         if (!isValidGitRemoteUrl(url)) {
-            printLog("[SYSTEM] Invalid remote URL. Example: https://github.com/org/repo.git");
+            printLog("[SYSTEM] Invalid remote URL. Example: https://github.com/org/repo");
             return;
         }
 
@@ -627,7 +640,7 @@ export const setupButtonHandlers = ({
         }
 
         if (!isValidGitRemoteUrl(url)) {
-            printLog("[SYSTEM] Invalid remote URL. Example: https://github.com/org/repo.git");
+            printLog("[SYSTEM] Invalid remote URL. Example: https://github.com/org/repo");
             return;
         }
 
