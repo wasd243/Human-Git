@@ -11,14 +11,16 @@
 
 ### Specifically TODO in alpha.10
 
-- [ ] Fix bugs that Quick Deployment may cause no signature;
-- [ ] Let GitHub Copilot write an CR of `v0.1.0-alpha.10-pre-1`;
-- [ ] Review and fix bugs in CR;
-- [ ] Refactorization and decomposition of large files (if so);
+- [x] Fix bugs that Quick Deployment may cause no signature;
+- [x] Let GitHub Copilot write an CR of `v0.1.0-alpha.10-pre-1`;
+- [x] Review and fix bugs in CR;
+- [x] Refactorization and decomposition of large files (if so);
 - [ ] Support GPG signing in `v0.1.0-alpha.10-pre-2`;
 - [ ] Let GitHub Copilot write an CR of `v0.1.0-alpha.10-pre-2`;
 - [ ] Review and fix bugs in CR;
 - [ ] Pull Request to `main` branch;
 
 ### Finish alpha.10;
-- [ ] ?
+- [x]  `v0.1.0-alpha.10-pre-1`;
+- [ ]  `v0.1.0-alpha.10-pre-2`;
+- [ ]  `v0.1.0-alpha.10`;
