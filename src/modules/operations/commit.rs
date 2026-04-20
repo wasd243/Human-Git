@@ -44,23 +44,12 @@ pub fn commit_changes(repo_path: &str, message: &str) -> Result<String> {
     Ok(format!("Commit successful: {}", commit_id))
 }
 
-fn default_quick_deploy_message() -> String {
-    format!("HumanGit quick deploy {}", unix_timestamp_tag())
-}
-
-fn unix_timestamp_tag() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(duration) => format!("unix-{}", duration.as_secs()),
-        Err(_) => "now".to_string(),
-    }
-}
-
 /// Quick deployment flow:
 /// 1) stage all changes (add.rs)
 /// 2) commit staged changes (commit.rs)
 /// 3) push to origin (push.rs)
+///
+/// A commit message is required to avoid low-quality auto-generated commits.
 pub fn quick_deploy(repo_path: &str, message: Option<&str>, force: bool) -> Result<String> {
     let repo = Repository::discover(repo_path).context("Failed to open repository")?;
     let mut index = repo.index().context("Failed to open repository index")?;
@@ -71,11 +60,10 @@ pub fn quick_deploy(repo_path: &str, message: Option<&str>, force: bool) -> Resu
     let commit_message = message
         .map(str::trim)
         .filter(|m| !m.is_empty())
-        .map(ToOwned::to_owned)
-        .unwrap_or_else(default_quick_deploy_message);
+        .ok_or_else(|| anyhow::anyhow!("Quick deploy requires a non-empty commit message."))?;
 
     let commit_result =
-        commit_changes(repo_path, &commit_message).context("Failed to create commit")?;
+        commit_changes(repo_path, commit_message).context("Failed to create commit")?;
     let push_result =
         push_to_origin_with_force(repo_path, force).context("Failed to push to origin")?;
 
