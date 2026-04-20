@@ -22,5 +22,7 @@
 
 ### Finish alpha.10;
 - [x]  `v0.1.0-alpha.10-pre-1`;
-- [ ]  `v0.1.0-alpha.10-pre-2`;
+- [x]  `v0.1.0-alpha.10-pre-2`;
+- [ ]  `v0.1.0-alpha.10-pre-3`;
+- [ ]  _v0.1.0-alpha.10-pre-4_ (If so);
 - [ ]  `v0.1.0-alpha.10`;
