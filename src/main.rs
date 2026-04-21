@@ -38,6 +38,7 @@ pub mod modules {
         }
     }
     pub mod signing {
+        pub mod gpg;
         pub mod ssh;
     }
     pub mod watcher;
@@ -45,7 +46,7 @@ pub mod modules {
 
 // 2. Import required dependencies
 use crate::modules::operations::open_folder;
-use crate::modules::signing::ssh;
+use crate::modules::signing::{gpg, ssh};
 use crate::modules::ui_bridge::handlers;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -91,10 +92,15 @@ async fn main() -> anyhow::Result<()> {
             open_folder::update_repo_path,
             open_folder::open_folder_dialog,
             open_folder::get_cached_repo_path,
+            open_folder::clear_cached_repo_path,
             ssh::detect_ssh_keys,
             ssh::pick_ssh_key_file,
             ssh::enable_ssh_signing,
             ssh::disable_ssh_signing,
+            gpg::detect_gpg_binaries,
+            gpg::pick_gpg_program_file,
+            gpg::enable_gpg_signing,
+            gpg::disable_gpg_signing,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

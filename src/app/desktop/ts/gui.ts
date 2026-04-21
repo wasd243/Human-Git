@@ -66,6 +66,52 @@ const btnSigningDisableCancel = document.getElementById("btn-signing-disable-can
 const btnSigningDisableConfirm = document.getElementById("btn-signing-disable-confirm")!;
 const signingVerifiedBadge = document.getElementById("signing-verified-badge")!;
 
+// Build signing mode + GPG controls dynamically so HTML changes are not required.
+const sshSigningSection = sshKeySelect.closest(".ssh-signing-section") as HTMLElement;
+const sshSigningControls = sshKeySelect.parentElement as HTMLElement;
+
+const signingModeRow = document.createElement("div");
+signingModeRow.className = "signing-provider-row";
+
+const signingModeLabel = document.createElement("label");
+signingModeLabel.textContent = "Signing type";
+
+const signingModeSelect = document.createElement("select");
+signingModeSelect.id = "signing-mode-select";
+signingModeSelect.innerHTML = `
+  <option value="ssh">SSH</option>
+  <option value="gpg">GPG</option>
+`;
+signingModeSelect.value = "ssh";
+
+signingModeRow.appendChild(signingModeLabel);
+signingModeRow.appendChild(signingModeSelect);
+
+const gpgSigningControls = document.createElement("div");
+gpgSigningControls.className = "ssh-signing-controls hidden";
+gpgSigningControls.id = "gpg-signing-controls";
+
+const gpgBinarySelect = document.createElement("select");
+gpgBinarySelect.id = "gpg-binary-select";
+
+const btnPickGpgBinary = document.createElement("button");
+btnPickGpgBinary.id = "btn-pick-gpg-binary";
+btnPickGpgBinary.textContent = "GPG.exe";
+btnPickGpgBinary.style.color = "#F0F0F0";
+btnPickGpgBinary.className = "quick-deploy-btn";
+
+const gpgSigningKeyInput = document.createElement("input");
+gpgSigningKeyInput.id = "gpg-signing-key-input";
+gpgSigningKeyInput.placeholder = "Optional GPG key id/email";
+gpgSigningKeyInput.type = "text";
+
+gpgSigningControls.appendChild(gpgBinarySelect);
+gpgSigningControls.appendChild(btnPickGpgBinary);
+gpgSigningControls.appendChild(gpgSigningKeyInput);
+
+sshSigningSection.prepend(signingModeRow);
+sshSigningSection.appendChild(gpgSigningControls);
+
 // staged section
 const stagedSectionEl = document.createElement("div");
 const stagedTitleEl = document.createElement("div");
@@ -156,8 +202,14 @@ const buttonHandlers = setupButtonHandlers({
     btnForcePushConfirm,
     commitMessageEl,
     signingEnabledCheckbox,
+    signingModeSelect,
+    sshSigningControls,
+    gpgSigningControls,
     sshKeySelect,
     btnPickSshKey,
+    gpgBinarySelect,
+    btnPickGpgBinary,
+    gpgSigningKeyInput,
     signingDisableConfirmOverlay,
     btnSigningDisableCancel,
     btnSigningDisableConfirm,
@@ -177,9 +229,15 @@ const restoreLastOpenedFolder = async () => {
             return;
         }
 
-        await invoke("update_repo_path", {path: cachedPath});
-        buttonHandlers.setActiveRepoPath(cachedPath);
-        printLog(`[SYSTEM] Restored last opened folder: ${cachedPath}`);
+        try {
+            await invoke("update_repo_path", {path: cachedPath});
+            buttonHandlers.setActiveRepoPath(cachedPath);
+            printLog(`[SYSTEM] Restored last opened folder: ${cachedPath}`);
+        } catch (e) {
+            printLog(`[ERR] Failed to restore cached folder: ${e}`);
+            await invoke("clear_cached_repo_path");
+            printLog("[SYSTEM] Cleared invalid cached folder path.");
+        }
     } catch (e) {
         printLog(`[ERR] Failed to restore cached folder: ${e}`);
     }
@@ -205,8 +263,20 @@ void restoreLastOpenedFolder().then(() =>
 backgroundAnimation();
 leftUI();
 
-setInterval(async () => {
-    if (topUI.classList.contains("show")) {
-        await refreshFileList();
+let refreshInFlight = false;
+const scheduleRefresh = async () => {
+    if (topUI.classList.contains("show") && !refreshInFlight) {
+        refreshInFlight = true;
+        try {
+            await refreshFileList();
+        } finally {
+            refreshInFlight = false;
+        }
     }
-}, 1000);
+
+    window.setTimeout(() => {
+        void scheduleRefresh();
+    }, 1000);
+};
+
+void scheduleRefresh();

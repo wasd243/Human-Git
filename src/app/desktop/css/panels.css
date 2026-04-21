@@ -516,6 +516,34 @@
     padding: 8px 10px;
 }
 
+.signing-provider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#signing-mode-select,
+#gpg-binary-select {
+    flex: 1;
+    min-height: 36px;
+    border-radius: 8px;
+    border: 0.5px solid rgba(255,255,255,0.2);
+    background: rgba(20,20,20,0.28);
+    color: rgba(242,234,218,0.95);
+    padding: 8px 10px;
+}
+
+#gpg-signing-key-input {
+    flex: 1;
+    min-height: 36px;
+    border-radius: 8px;
+    border: 0.5px solid rgba(255,255,255,0.2);
+    background: rgba(20,20,20,0.28);
+    color: rgba(242,234,218,0.95);
+    padding: 8px 10px;
+    box-sizing: border-box;
+}
+
 .commit-signing-wrap {
     display: inline-flex;
     align-items: center;
