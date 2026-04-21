@@ -1,86 +1,28 @@
 import {invoke} from "@tauri-apps/api/core";
 import type {MutationPayload} from "./listener";
-
-interface SetupButtonHandlersParams {
-    btnShowChanges: HTMLElement;
-    btnGitInit: HTMLElement;
-    btnOpenPullUI: HTMLElement;
-    topUI: HTMLElement;
-    bottomUI: HTMLElement;
-    rightUI: HTMLElement;
-    btnCloseTopUI: HTMLElement;
-    btnCloseBottomUI: HTMLElement;
-    btnCloseRightUI: HTMLElement;
-    btnDoGitInit: HTMLElement;
-    btnChooseFolder: HTMLElement;
-    btnPullAction: HTMLElement;
-    btnFetchAction: HTMLElement;
-    fetchPruneCheckbox: HTMLInputElement;
-    fetchPruneToggleLabel: HTMLElement;
-    fetchPruneConfirmOverlay: HTMLElement;
-    btnFetchPruneCancel: HTMLElement;
-    btnFetchPruneConfirm: HTMLElement;
-    btnRemoteAction: HTMLElement;
-    remoteInputPanel: HTMLElement;
-    remoteUrlInput: HTMLTextAreaElement;
-    remoteListEl: HTMLElement;
-    pullConfirmOverlay: HTMLElement;
-    btnPullCancel: HTMLElement;
-    btnPullConfirm: HTMLElement;
-    remoteConfirmOverlay: HTMLElement;
-    btnRemoteCancel: HTMLElement;
-    btnRemoteConfirm: HTMLElement;
-    fileListEl: HTMLElement;
-    stagedListEl: HTMLElement;
-    btnStageSelected: HTMLElement;
-    btnStageAll: HTMLElement;
-    btnQuickDeploy: HTMLButtonElement;
-    btnCommit: HTMLElement;
-    btnPush: HTMLElement;
-    forcePushCheckbox: HTMLInputElement;
-    forcePushToggleLabel: HTMLElement;
-    forceModeConfirmOverlay: HTMLElement;
-    btnForceModeCancel: HTMLElement;
-    btnForceModeConfirm: HTMLElement;
-    forcePushConfirmOverlay: HTMLElement;
-    btnForcePushCancel: HTMLElement;
-    btnForcePushConfirm: HTMLElement;
-    commitMessageEl: HTMLTextAreaElement;
-    signingEnabledCheckbox: HTMLInputElement;
-    signingModeSelect: HTMLSelectElement;
-    sshSigningControls: HTMLElement;
-    gpgSigningControls: HTMLElement;
-    sshKeySelect: HTMLSelectElement;
-    btnPickSshKey: HTMLElement;
-    gpgBinarySelect: HTMLSelectElement;
-    btnPickGpgBinary: HTMLElement;
-    gpgSigningKeyInput: HTMLInputElement;
-    signingDisableConfirmOverlay: HTMLElement;
-    btnSigningDisableCancel: HTMLElement;
-    btnSigningDisableConfirm: HTMLElement;
-    signingVerifiedBadge: HTMLElement;
-    selectedUnstagedPaths: Set<string>;
-    refreshFileList: () => Promise<void>;
-    setStats: (stats: MutationPayload) => void;
-    resetStats: () => void;
-    printLog: (msg: string) => void;
-    onRepoContextChange: (path: string | null) => void;
-}
-
-interface ButtonHandlersApi {
-    setActiveRepoPath: (path: string) => void;
-}
-
-interface SshKeyInfo {
-    file_name: string;
-    full_path: string;
-    comment: string;
-}
-
-interface GpgBinaryInfo {
-    file_name: string;
-    full_path: string;
-}
+import {
+    MANUAL_OPTION_VALUE,
+    ORIGIN_REMOTE,
+    type ButtonHandlersApi,
+    type GpgBinaryInfo,
+    type SetupButtonHandlersParams,
+    type SshKeyInfo
+} from "./buttons/types";
+import {setupBtnShowChanges} from "./buttons/btnShowChanges";
+import {setupBtnPullAction} from "./buttons/btnPullAction";
+import {setupBtnOpenPullUI} from "./buttons/btnOpenPullUI";
+import {setupBtnCloseTopUI} from "./buttons/btnCloseTopUI";
+import {setupBtnChooseFolder} from "./buttons/btnChooseFolder";
+import {setupBtnCloseRightUI} from "./buttons/btnCloseRightUI";
+import {setupBtnFetchPruneCancel} from "./buttons/btnFetchPruneCancel";
+import {applyFetchPruneVisualState} from "./buttons/fetchPruneToggleLabel";
+import {setupBtnDoGitInit} from "./buttons/btnDoGitInit";
+import {setupBtnFetchPruneConfirm} from "./buttons/btnFetchPruneConfirm";
+import {setupBtnRemoteAction} from "./buttons/btnRemoteAction";
+import {setupFetchPruneCheckbox} from "./buttons/fetchPruneCheckbox";
+import {setupBtnFetchAction} from "./buttons/btnFetchAction";
+import {setupBtnGitInit} from "./buttons/btnGitInit";
+import {setupBtnCloseBottomUI} from "./buttons/btnCloseBottomUI";
 
 const createKeyLabel = (k: SshKeyInfo) =>
     k.comment?.trim().length ? `${k.file_name} — ${k.comment}` : k.file_name;
@@ -91,11 +33,6 @@ const isValidGitRemoteUrl = (url: string) => {
         return false;
     }
 
-    // Supports standard remote formats:
-    // - https://host/owner/repo(.git)
-    // - ssh://...
-    // - git://...
-    // - git@host:owner/repo(.git)
     return /^(https?:\/\/|ssh:\/\/|git:\/\/)[^\s]+$/.test(trimmed)
         || /^git@[^:\s]+:[^\s]+$/.test(trimmed);
 };
@@ -204,13 +141,13 @@ export const setupButtonHandlers = ({
     const selectedKeyPath = () => {
         const value = sshKeySelect.value?.trim();
         if (!value) return null;
-        return value === "__manual__" ? manualKeyPath : value;
+        return value === MANUAL_OPTION_VALUE ? manualKeyPath : value;
     };
 
     const selectedGpgProgramPath = () => {
         const value = gpgBinarySelect.value?.trim();
         if (!value) return null;
-        return value === "__manual__" ? manualGpgProgramPath : value;
+        return value === MANUAL_OPTION_VALUE ? manualGpgProgramPath : value;
     };
 
     const updateSigningModeUI = () => {
@@ -252,7 +189,7 @@ export const setupButtonHandlers = ({
 
         if (manualKeyPath) {
             const opt = document.createElement("option");
-            opt.value = "__manual__";
+            opt.value = MANUAL_OPTION_VALUE;
             opt.textContent = `Manual key — ${manualKeyPath}`;
             sshKeySelect.appendChild(opt);
         }
@@ -296,7 +233,7 @@ export const setupButtonHandlers = ({
 
         if (manualGpgProgramPath) {
             const opt = document.createElement("option");
-            opt.value = "__manual__";
+            opt.value = MANUAL_OPTION_VALUE;
             opt.textContent = `Manual program — ${manualGpgProgramPath}`;
             gpgBinarySelect.appendChild(opt);
         }
@@ -394,12 +331,6 @@ export const setupButtonHandlers = ({
         btnPush.classList.toggle("force-danger", enabled);
     };
 
-    const applyFetchPruneVisualState = (enabled: boolean) => {
-        fetchPruneCheckbox.checked = enabled;
-        fetchPruneToggleLabel.classList.toggle("danger", enabled);
-        btnFetchAction.classList.toggle("prune-danger", enabled);
-    };
-
     const doPush = async (force: boolean) => {
         try {
             if (force) {
@@ -426,7 +357,7 @@ export const setupButtonHandlers = ({
     };
 
     const invokeFetch = async (prune: boolean): Promise<string> => {
-        return await invoke<string>("fetch_changes", {remote: "origin", prune});
+        return await invoke<string>("fetch_changes", {remote: ORIGIN_REMOTE, prune});
     };
 
     const showMainButtons = () => {
@@ -442,11 +373,144 @@ export const setupButtonHandlers = ({
     };
 
     applyForcePushVisualState(false);
-    applyFetchPruneVisualState(false);
+    applyFetchPruneVisualState({
+        fetchPruneCheckbox,
+        fetchPruneToggleLabel,
+        btnFetchAction,
+        enabled: false
+    });
     updateSigningModeUI();
     void refreshDetectedKeys();
     void refreshDetectedGpgPrograms();
     updateVerifiedBadge();
+
+    setupBtnShowChanges({
+        btnShowChanges,
+        topUI,
+        hideMainButtons,
+        refreshDetectedKeys,
+        refreshDetectedGpgPrograms,
+        refreshFileList
+    });
+
+    setupBtnCloseTopUI({
+        btnCloseTopUI,
+        topUI,
+        forceModeConfirmOverlay,
+        forcePushConfirmOverlay,
+        signingDisableConfirmOverlay,
+        showMainButtons
+    });
+
+    setupBtnGitInit({
+        btnGitInit,
+        bottomUI,
+        hideMainButtons
+    });
+
+    setupBtnCloseBottomUI({
+        btnCloseBottomUI,
+        bottomUI,
+        showMainButtons
+    });
+
+    setupBtnOpenPullUI({
+        btnOpenPullUI,
+        rightUI,
+        pullConfirmOverlay,
+        remoteConfirmOverlay,
+        fetchPruneConfirmOverlay,
+        remoteInputPanel,
+        hideMainButtons,
+        refreshRemoteList
+    });
+
+    setupBtnCloseRightUI({
+        btnCloseRightUI,
+        rightUI,
+        pullConfirmOverlay,
+        remoteConfirmOverlay,
+        fetchPruneConfirmOverlay,
+        remoteInputPanel,
+        showMainButtons
+    });
+
+    setupBtnPullAction({
+        btnPullAction,
+        pullConfirmOverlay
+    });
+
+    setupFetchPruneCheckbox({
+        fetchPruneCheckbox,
+        fetchPruneConfirmOverlay,
+        fetchPruneToggleLabel,
+        btnFetchAction,
+        printLog
+    });
+
+    setupBtnFetchPruneCancel({
+        btnFetchPruneCancel,
+        fetchPruneConfirmOverlay,
+        fetchPruneCheckbox,
+        fetchPruneToggleLabel,
+        btnFetchAction,
+        printLog
+    });
+
+    setupBtnFetchPruneConfirm({
+        btnFetchPruneConfirm,
+        fetchPruneConfirmOverlay,
+        fetchPruneCheckbox,
+        fetchPruneToggleLabel,
+        btnFetchAction,
+        printLog
+    });
+
+    setupBtnFetchAction({
+        btnFetchAction,
+        fetchPruneCheckbox,
+        invokeFetch,
+        refreshRemoteList,
+        printLog
+    });
+
+    setupBtnRemoteAction({
+        btnRemoteAction,
+        remoteInputPanel,
+        remoteUrlInput,
+        remoteConfirmOverlay,
+        printLog,
+        isValidGitRemoteUrl
+    });
+
+    setupBtnDoGitInit({
+        btnDoGitInit,
+        getActiveRepoPath: () => activeRepoPath,
+        setStats,
+        printLog
+    });
+
+    setupBtnChooseFolder({
+        btnChooseFolder,
+        setActiveRepoPathInternal,
+        selectedUnstagedPaths,
+        fileListEl,
+        stagedListEl,
+        remoteListEl,
+        btnQuickDeploy,
+        applyForcePushVisualState,
+        fetchPruneCheckbox,
+        fetchPruneToggleLabel,
+        btnFetchAction,
+        printLog,
+        setStats,
+        resetStats,
+        refreshDetectedKeys,
+        refreshDetectedGpgPrograms,
+        signingEnabledCheckbox,
+        applySigningConfig,
+        refreshRemoteList
+    });
 
     signingModeSelect.addEventListener("change", async () => {
         updateSigningModeUI();
@@ -497,7 +561,7 @@ export const setupButtonHandlers = ({
             }
             manualKeyPath = picked;
             renderKeyOptions();
-            sshKeySelect.value = "__manual__";
+            sshKeySelect.value = MANUAL_OPTION_VALUE;
             printLog(`[SYSTEM] Manual SSH key selected: ${picked}`);
 
             if (signingEnabledCheckbox.checked && selectedSigningMode() === "ssh") {
@@ -517,7 +581,7 @@ export const setupButtonHandlers = ({
             }
             manualGpgProgramPath = picked;
             renderGpgOptions();
-            gpgBinarySelect.value = "__manual__";
+            gpgBinarySelect.value = MANUAL_OPTION_VALUE;
             printLog(`[SYSTEM] Manual GPG program selected: ${picked}`);
 
             if (signingEnabledCheckbox.checked && selectedSigningMode() === "gpg") {
@@ -531,7 +595,7 @@ export const setupButtonHandlers = ({
     signingEnabledCheckbox.addEventListener("change", async () => {
         if (!signingEnabledCheckbox.checked) {
             signingDisableConfirmOverlay.classList.remove("hidden");
-            signingEnabledCheckbox.checked = true; // wait for confirm
+            signingEnabledCheckbox.checked = true;
             return;
         }
 
@@ -556,22 +620,6 @@ export const setupButtonHandlers = ({
         } catch (e) {
             printLog(`[ERR] ${e}`);
         }
-    });
-
-    btnShowChanges.addEventListener("click", () => {
-        topUI.classList.add("show");
-        hideMainButtons();
-        void refreshDetectedKeys();
-        void refreshDetectedGpgPrograms();
-        void refreshFileList();
-    });
-
-    btnCloseTopUI.addEventListener("click", () => {
-        topUI.classList.remove("show");
-        forceModeConfirmOverlay.classList.add("hidden");
-        forcePushConfirmOverlay.classList.add("hidden");
-        signingDisableConfirmOverlay.classList.add("hidden");
-        showMainButtons();
     });
 
     btnStageSelected.addEventListener("click", async () => {
@@ -678,39 +726,6 @@ export const setupButtonHandlers = ({
         }
     });
 
-    btnGitInit.addEventListener("click", () => {
-        bottomUI.classList.add("show");
-        hideMainButtons();
-    });
-
-    btnCloseBottomUI.addEventListener("click", () => {
-        bottomUI.classList.remove("show");
-        showMainButtons();
-    });
-
-    btnOpenPullUI.addEventListener("click", () => {
-        rightUI.classList.add("show");
-        pullConfirmOverlay.classList.add("hidden");
-        remoteConfirmOverlay.classList.add("hidden");
-        fetchPruneConfirmOverlay.classList.add("hidden");
-        remoteInputPanel.classList.add("hidden");
-        hideMainButtons();
-        void refreshRemoteList();
-    });
-
-    btnCloseRightUI.addEventListener("click", () => {
-        rightUI.classList.remove("show");
-        pullConfirmOverlay.classList.add("hidden");
-        remoteConfirmOverlay.classList.add("hidden");
-        fetchPruneConfirmOverlay.classList.add("hidden");
-        remoteInputPanel.classList.add("hidden");
-        showMainButtons();
-    });
-
-    btnPullAction.addEventListener("click", () => {
-        pullConfirmOverlay.classList.remove("hidden");
-    });
-
     btnPullCancel.addEventListener("click", () => {
         pullConfirmOverlay.classList.add("hidden");
     });
@@ -726,67 +741,6 @@ export const setupButtonHandlers = ({
         } catch (e) {
             printLog(`[ERR] ${e}`);
         }
-    });
-
-    fetchPruneCheckbox.addEventListener("change", () => {
-        if (fetchPruneCheckbox.checked) {
-            fetchPruneConfirmOverlay.classList.remove("hidden");
-            applyFetchPruneVisualState(false);
-            return;
-        }
-        applyFetchPruneVisualState(false);
-        printLog("[SYSTEM] Fetch prune mode (-p) disabled.");
-    });
-
-    btnFetchPruneCancel.addEventListener("click", () => {
-        fetchPruneConfirmOverlay.classList.add("hidden");
-        applyFetchPruneVisualState(false);
-        printLog("[SYSTEM] Cancel enabling fetch prune mode (-p).");
-    });
-
-    btnFetchPruneConfirm.addEventListener("click", () => {
-        fetchPruneConfirmOverlay.classList.add("hidden");
-        applyFetchPruneVisualState(true);
-        printLog("[SYSTEM] Fetch prune mode (-p) enabled.");
-    });
-
-    btnFetchAction.addEventListener("click", async () => {
-        const prune = fetchPruneCheckbox.checked;
-        if (prune) {
-            printLog("[GIT] Fetching from origin with prune (-p)...");
-        } else {
-            printLog("[GIT] Fetching from origin...");
-        }
-
-        try {
-            const result = await invokeFetch(prune);
-            printLog(`[SUCCESS] ${result}`);
-            await refreshRemoteList();
-        } catch (e) {
-            printLog(`[ERR] ${e}`);
-        }
-    });
-
-    btnRemoteAction.addEventListener("click", () => {
-        if (remoteInputPanel.classList.contains("hidden")) {
-            remoteInputPanel.classList.remove("hidden");
-            remoteUrlInput.focus();
-            printLog("[SYSTEM] Enter a valid remote URL, then click Remote again.");
-            return;
-        }
-
-        const url = remoteUrlInput.value.trim();
-        if (!url) {
-            printLog("[SYSTEM] Remote URL cannot be empty.");
-            return;
-        }
-
-        if (!isValidGitRemoteUrl(url)) {
-            printLog("[SYSTEM] Invalid remote URL. Example: https://github.com/org/repo");
-            return;
-        }
-
-        remoteConfirmOverlay.classList.remove("hidden");
     });
 
     btnRemoteCancel.addEventListener("click", () => {
@@ -815,68 +769,6 @@ export const setupButtonHandlers = ({
             await refreshRemoteList();
         } catch (_) {
             // Result is sent through backend emit: "remote-add-result"
-        }
-    });
-
-    btnDoGitInit.addEventListener("click", async () => {
-        if (!activeRepoPath) {
-            printLog("[SYSTEM] Please choose a folder before initializing a repository.");
-            return;
-        }
-
-        printLog(`[GIT] Initializing repository in ${activeRepoPath}...`);
-        try {
-            const result = await invoke<string>("git_init", {repoPath: activeRepoPath});
-            printLog(`[SUCCESS] ${result}`);
-            const stats = await invoke<MutationPayload>("get_initial_stats");
-            setStats(stats);
-        } catch (e) {
-            printLog(`[ERR] ${e}`);
-        }
-    });
-
-    btnChooseFolder.addEventListener("click", async () => {
-        printLog("[SYSTEM] Opening folder dialog...");
-        try {
-            const path = await invoke<string | null>("open_folder_dialog");
-            if (path) {
-                printLog(`[SYSTEM] Folder selected: ${path}`);
-
-                await invoke("update_repo_path", {path});
-                setActiveRepoPathInternal(path);
-                selectedUnstagedPaths.clear();
-                fileListEl.replaceChildren();
-                stagedListEl.replaceChildren();
-                remoteListEl.replaceChildren();
-                btnQuickDeploy.disabled = true;
-                applyForcePushVisualState(false);
-                applyFetchPruneVisualState(false);
-                printLog(`[SYSTEM] Monitoring switched to: ${path}`);
-
-                try {
-                    const stats = await invoke<MutationPayload>("get_initial_stats");
-                    setStats(stats);
-                } catch (_statsErr) {
-                    resetStats();
-                    printLog("[SYSTEM] Selected folder is not a Git repository yet.");
-                }
-
-                await refreshDetectedKeys();
-                await refreshDetectedGpgPrograms();
-                if (signingEnabledCheckbox.checked) {
-                    try {
-                        await applySigningConfig();
-                    } catch (e) {
-                        printLog(`[ERR] ${e}`);
-                    }
-                }
-
-                await refreshRemoteList();
-            } else {
-                printLog("[SYSTEM] Folder selection cancelled.");
-            }
-        } catch (e) {
-            printLog(`[ERR] ${e}`);
         }
     });
 

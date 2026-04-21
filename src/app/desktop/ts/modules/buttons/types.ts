@@ -1,5 +1,10 @@
 import type {MutationPayload} from "../listener";
 
+export const CSS_CLASS_HIDDEN = "hidden";
+export const CSS_CLASS_SHOW = "show";
+export const MANUAL_OPTION_VALUE = "__manual__";
+export const ORIGIN_REMOTE = "origin";
+
 export interface SetupButtonHandlersParams {
     btnShowChanges: HTMLElement;
     btnGitInit: HTMLElement;
@@ -80,4 +85,3 @@ export interface GpgBinaryInfo {
     file_name: string;
     full_path: string;
 }
-
