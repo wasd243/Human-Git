@@ -92,6 +92,7 @@ async fn main() -> anyhow::Result<()> {
             open_folder::update_repo_path,
             open_folder::open_folder_dialog,
             open_folder::get_cached_repo_path,
+            open_folder::clear_cached_repo_path,
             ssh::detect_ssh_keys,
             ssh::pick_ssh_key_file,
             ssh::enable_ssh_signing,

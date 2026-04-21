@@ -19,11 +19,18 @@ pub async fn update_repo_path(
     if trimmed_path.is_empty() {
         return Err("Repository path cannot be empty.".to_string());
     }
+    let candidate_path = PathBuf::from(trimmed_path);
+    if !candidate_path.exists() {
+        return Err(format!("Repository path does not exist: {}", trimmed_path));
+    }
+    if !candidate_path.is_dir() {
+        return Err(format!("Repository path is not a folder: {}", trimmed_path));
+    }
 
     // 1. Update the path
     {
         let mut current_path = state.current_repo_path.lock().await;
-        *current_path = Some(PathBuf::from(trimmed_path));
+        *current_path = Some(candidate_path);
     }
 
     // 2. Clear memory cache/stats
@@ -62,4 +69,20 @@ pub async fn get_cached_repo_path(state: tauri::State<'_, AppState>) -> Result<O
     )
     .optional()
     .map_err(|e| format!("Failed to load cached repository path: {}", e))
+}
+
+#[tauri::command]
+pub async fn clear_cached_repo_path(state: tauri::State<'_, AppState>) -> Result<(), String> {
+    let conn = state
+        .db_conn
+        .get()
+        .map_err(|e| format!("Failed to acquire DB connection: {}", e))?;
+
+    conn.execute(
+        "DELETE FROM app_cache WHERE key = 'last_repo_path'",
+        [],
+    )
+    .map_err(|e| format!("Failed to clear cached repository path: {}", e))?;
+
+    Ok(())
 }

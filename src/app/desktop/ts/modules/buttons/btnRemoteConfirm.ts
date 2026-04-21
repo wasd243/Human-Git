@@ -38,8 +38,8 @@ export const setupBtnRemoteConfirm = ({
             await invoke<string>("add_remote_origin", {url});
             remoteUrlInput.value = "";
             await refreshRemoteList();
-        } catch (_) {
-            // Result is sent through backend emit: "remote-add-result"
+        } catch (e) {
+            printLog(`[ERR] Failed to invoke remote add: ${e}`);
         }
     });
 };

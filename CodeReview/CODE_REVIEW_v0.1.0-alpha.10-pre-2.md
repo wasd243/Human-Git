@@ -1,18 +1,18 @@
-# Code Review — `v0.1.0-alpha.10-pre-2`
+# Code Review — `v0.1.0-alpha.10-pre-2` (refresh)
 
 ## Verdict
-**Needs changes before release.** The overall structure is solid, but a few runtime behaviors can still cause noisy failures or hidden operational errors.
+**Ready after fixes.** The previously reported runtime reliability issues are now addressed in code.
 
 ## Findings
 
-| Severity   | Finding                                                           | Evidence                                                                                                                                                                                          | Why it matters                                                                                                                | Recommendation                                                                                                                    |
-|------------|-------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| **Medium** | **Cached repository path is restored without path validation**    | `src\app\desktop\ts\gui.ts:225-237` restores cached path and immediately calls `update_repo_path`; `src\modules\operations\open_folder.rs:14-48` only validates non-empty string and persists it. | If the folder was moved/deleted, startup repeatedly points watcher/state at an invalid path and causes recurring error noise. | Validate existence/readability in `update_repo_path` before accepting/persisting, and clear bad cache entries when restore fails. |
-| **Medium** | **Periodic file refresh can overlap concurrent backend calls**    | `src\app\desktop\ts\gui.ts:260-264` uses `setInterval(async ...)` every second with no in-flight guard.                                                                                           | Slow `refreshFileList()` calls can stack and create avoidable load/jitter from concurrent `get_working_status` invokes.       | Add an in-flight lock or replace with self-scheduling `setTimeout` that waits for prior refresh completion.                       |
-| **Low**    | **Remote add flow swallows invoke failures that are not emitted** | `src\app\desktop\ts\modules\buttons.ts:812-818` catches and ignores all exceptions from `invoke("add_remote_origin")`.                                                                            | Transport/runtime invoke failures can be completely silent if backend emit does not fire, making troubleshooting difficult.   | Log the caught error (or rethrow to shared handler) while still keeping event-driven success/error messaging.                     |
+| Severity | Finding | Where | How to fix | Current status / evidence |
+|---|---|---|---|---|
+| **Medium** | Cached repository path restore accepted invalid paths | `src\modules\operations\open_folder.rs`, `src\app\desktop\ts\gui.ts`, `src\main.rs` | Validate candidate path before state/cache update; if restore fails, clear stale `last_repo_path` cache entry and register clear command in Tauri handler list. | **Fixed**: path existence + directory checks in `update_repo_path` (`open_folder.rs:22-28`), new `clear_cached_repo_path` command (`open_folder.rs:74-88`) registered (`main.rs:92-96`), and restore flow clears bad cache (`gui.ts:232-240`). |
+| **Medium** | Periodic refresh could overlap concurrent `refreshFileList()` calls | `src\app\desktop\ts\gui.ts` | Replace `setInterval(async ...)` with self-scheduling loop + in-flight guard so next cycle only starts after prior completion. | **Fixed**: `refreshInFlight` guard + recursive `setTimeout` scheduler (`gui.ts:266-282`). |
+| **Low** | Remote add invoke failure was swallowed in UI | `src\app\desktop\ts\modules\buttons\btnRemoteConfirm.ts` | Log caught invoke errors so transport/runtime failures are visible even if event emission fails. | **Fixed**: catch now logs explicit error (`btnRemoteConfirm.ts:41-43`). |
 
 ## Positive notes
 
-- Remote URL validation is now appropriately permissive for common Git URL formats (`src\app\desktop\ts\modules\buttons.ts:88-101`).
-- Quick deploy now requires a non-empty message and delegates commit creation through Git CLI, reducing accidental low-quality commit behavior (`src\modules\operations\commit.rs:60-67`).
-- Blocking Git operations continue to be routed through `spawn_blocking` in Tauri handlers (`src\modules\ui_bridge\handlers.rs`).
+- Repo-path failure handling now self-heals stale cache on startup restore failure instead of repeatedly reusing an invalid path.
+- Refresh scheduling now prevents backend call pileups when file-status queries are slow.
+- Remote add path now preserves event-driven success flow while surfacing invoke-level failures.

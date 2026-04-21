@@ -229,9 +229,15 @@ const restoreLastOpenedFolder = async () => {
             return;
         }
 
-        await invoke("update_repo_path", {path: cachedPath});
-        buttonHandlers.setActiveRepoPath(cachedPath);
-        printLog(`[SYSTEM] Restored last opened folder: ${cachedPath}`);
+        try {
+            await invoke("update_repo_path", {path: cachedPath});
+            buttonHandlers.setActiveRepoPath(cachedPath);
+            printLog(`[SYSTEM] Restored last opened folder: ${cachedPath}`);
+        } catch (e) {
+            printLog(`[ERR] Failed to restore cached folder: ${e}`);
+            await invoke("clear_cached_repo_path");
+            printLog("[SYSTEM] Cleared invalid cached folder path.");
+        }
     } catch (e) {
         printLog(`[ERR] Failed to restore cached folder: ${e}`);
     }
@@ -257,8 +263,20 @@ void restoreLastOpenedFolder().then(() =>
 backgroundAnimation();
 leftUI();
 
-setInterval(async () => {
-    if (topUI.classList.contains("show")) {
-        await refreshFileList();
+let refreshInFlight = false;
+const scheduleRefresh = async () => {
+    if (topUI.classList.contains("show") && !refreshInFlight) {
+        refreshInFlight = true;
+        try {
+            await refreshFileList();
+        } finally {
+            refreshInFlight = false;
+        }
     }
-}, 1000);
+
+    window.setTimeout(() => {
+        void scheduleRefresh();
+    }, 1000);
+};
+
+void scheduleRefresh();
