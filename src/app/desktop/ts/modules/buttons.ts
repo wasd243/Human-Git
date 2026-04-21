@@ -47,8 +47,14 @@ interface SetupButtonHandlersParams {
     btnForcePushConfirm: HTMLElement;
     commitMessageEl: HTMLTextAreaElement;
     signingEnabledCheckbox: HTMLInputElement;
+    signingModeSelect: HTMLSelectElement;
+    sshSigningControls: HTMLElement;
+    gpgSigningControls: HTMLElement;
     sshKeySelect: HTMLSelectElement;
     btnPickSshKey: HTMLElement;
+    gpgBinarySelect: HTMLSelectElement;
+    btnPickGpgBinary: HTMLElement;
+    gpgSigningKeyInput: HTMLInputElement;
     signingDisableConfirmOverlay: HTMLElement;
     btnSigningDisableCancel: HTMLElement;
     btnSigningDisableConfirm: HTMLElement;
@@ -69,6 +75,11 @@ interface SshKeyInfo {
     file_name: string;
     full_path: string;
     comment: string;
+}
+
+interface GpgBinaryInfo {
+    file_name: string;
+    full_path: string;
 }
 
 const createKeyLabel = (k: SshKeyInfo) =>
@@ -163,8 +174,14 @@ export const setupButtonHandlers = ({
     btnForcePushConfirm,
     commitMessageEl,
     signingEnabledCheckbox,
+    signingModeSelect,
+    sshSigningControls,
+    gpgSigningControls,
     sshKeySelect,
     btnPickSshKey,
+    gpgBinarySelect,
+    btnPickGpgBinary,
+    gpgSigningKeyInput,
     signingDisableConfirmOverlay,
     btnSigningDisableCancel,
     btnSigningDisableConfirm,
@@ -179,6 +196,10 @@ export const setupButtonHandlers = ({
     let activeRepoPath: string | null = null;
     let detectedKeys: SshKeyInfo[] = [];
     let manualKeyPath: string | null = null;
+    let detectedGpgBinaries: GpgBinaryInfo[] = [];
+    let manualGpgProgramPath: string | null = null;
+
+    const selectedSigningMode = () => signingModeSelect.value === "gpg" ? "gpg" : "ssh";
 
     const selectedKeyPath = () => {
         const value = sshKeySelect.value?.trim();
@@ -186,8 +207,23 @@ export const setupButtonHandlers = ({
         return value === "__manual__" ? manualKeyPath : value;
     };
 
+    const selectedGpgProgramPath = () => {
+        const value = gpgBinarySelect.value?.trim();
+        if (!value) return null;
+        return value === "__manual__" ? manualGpgProgramPath : value;
+    };
+
+    const updateSigningModeUI = () => {
+        const useGpg = selectedSigningMode() === "gpg";
+        sshSigningControls.classList.toggle("hidden", useGpg);
+        gpgSigningControls.classList.toggle("hidden", !useGpg);
+    };
+
     const updateVerifiedBadge = () => {
-        const show = signingEnabledCheckbox.checked && !!selectedKeyPath();
+        const selected = selectedSigningMode() === "gpg"
+            ? !!selectedGpgProgramPath()
+            : !!selectedKeyPath();
+        const show = signingEnabledCheckbox.checked && selected;
         signingVerifiedBadge.classList.toggle("hidden", !show);
     };
 
@@ -235,9 +271,72 @@ export const setupButtonHandlers = ({
         updateVerifiedBadge();
     };
 
+    const renderGpgOptions = () => {
+        const previousValue = gpgBinarySelect.value;
+        gpgBinarySelect.replaceChildren();
+
+        if (detectedGpgBinaries.length === 0 && !manualGpgProgramPath) {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.textContent = "No GPG binary detected";
+            gpgBinarySelect.appendChild(opt);
+            gpgBinarySelect.disabled = true;
+            updateVerifiedBadge();
+            return;
+        }
+
+        gpgBinarySelect.disabled = false;
+
+        for (const bin of detectedGpgBinaries) {
+            const opt = document.createElement("option");
+            opt.value = bin.full_path;
+            opt.textContent = `${bin.file_name} — ${bin.full_path}`;
+            gpgBinarySelect.appendChild(opt);
+        }
+
+        if (manualGpgProgramPath) {
+            const opt = document.createElement("option");
+            opt.value = "__manual__";
+            opt.textContent = `Manual program — ${manualGpgProgramPath}`;
+            gpgBinarySelect.appendChild(opt);
+        }
+
+        if (previousValue) {
+            const hasPrevious = Array.from(gpgBinarySelect.options).some((o) => o.value === previousValue);
+            if (hasPrevious) {
+                gpgBinarySelect.value = previousValue;
+            }
+        }
+
+        if (!gpgBinarySelect.value && gpgBinarySelect.options.length > 0) {
+            gpgBinarySelect.selectedIndex = 0;
+        }
+
+        updateVerifiedBadge();
+    };
+
     const applySigningConfig = async () => {
+        const mode = selectedSigningMode();
+
         if (!signingEnabledCheckbox.checked) {
-            const result = await invoke<string>("disable_ssh_signing");
+            const result = mode === "gpg"
+                ? await invoke<string>("disable_gpg_signing")
+                : await invoke<string>("disable_ssh_signing");
+            printLog(`[SUCCESS] ${result}`);
+            updateVerifiedBadge();
+            return;
+        }
+
+        if (mode === "gpg") {
+            const gpgProgramPath = selectedGpgProgramPath();
+            if (!gpgProgramPath) {
+                printLog("[SYSTEM] Select a GPG program first.");
+                updateVerifiedBadge();
+                return;
+            }
+
+            const signingKey = gpgSigningKeyInput.value.trim() || null;
+            const result = await invoke<string>("enable_gpg_signing", {gpgProgramPath, signingKey});
             printLog(`[SUCCESS] ${result}`);
             updateVerifiedBadge();
             return;
@@ -263,6 +362,17 @@ export const setupButtonHandlers = ({
             detectedKeys = [];
             renderKeyOptions();
             printLog(`[ERR] Failed to detect SSH keys: ${e}`);
+        }
+    };
+
+    const refreshDetectedGpgPrograms = async () => {
+        try {
+            detectedGpgBinaries = await invoke<GpgBinaryInfo[]>("detect_gpg_binaries");
+            renderGpgOptions();
+        } catch (e) {
+            detectedGpgBinaries = [];
+            renderGpgOptions();
+            printLog(`[ERR] Failed to detect GPG binaries: ${e}`);
         }
     };
 
@@ -333,12 +443,44 @@ export const setupButtonHandlers = ({
 
     applyForcePushVisualState(false);
     applyFetchPruneVisualState(false);
+    updateSigningModeUI();
     void refreshDetectedKeys();
+    void refreshDetectedGpgPrograms();
     updateVerifiedBadge();
+
+    signingModeSelect.addEventListener("change", async () => {
+        updateSigningModeUI();
+        updateVerifiedBadge();
+        if (!signingEnabledCheckbox.checked) return;
+        try {
+            await applySigningConfig();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
 
     sshKeySelect.addEventListener("change", async () => {
         updateVerifiedBadge();
-        if (!signingEnabledCheckbox.checked) return;
+        if (!signingEnabledCheckbox.checked || selectedSigningMode() !== "ssh") return;
+        try {
+            await applySigningConfig();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
+
+    gpgBinarySelect.addEventListener("change", async () => {
+        updateVerifiedBadge();
+        if (!signingEnabledCheckbox.checked || selectedSigningMode() !== "gpg") return;
+        try {
+            await applySigningConfig();
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
+
+    gpgSigningKeyInput.addEventListener("change", async () => {
+        if (!signingEnabledCheckbox.checked || selectedSigningMode() !== "gpg") return;
         try {
             await applySigningConfig();
         } catch (e) {
@@ -358,7 +500,27 @@ export const setupButtonHandlers = ({
             sshKeySelect.value = "__manual__";
             printLog(`[SYSTEM] Manual SSH key selected: ${picked}`);
 
-            if (signingEnabledCheckbox.checked) {
+            if (signingEnabledCheckbox.checked && selectedSigningMode() === "ssh") {
+                await applySigningConfig();
+            }
+        } catch (e) {
+            printLog(`[ERR] ${e}`);
+        }
+    });
+
+    btnPickGpgBinary.addEventListener("click", async () => {
+        try {
+            const picked = await invoke<string | null>("pick_gpg_program_file");
+            if (!picked) {
+                printLog("[SYSTEM] GPG program selection cancelled.");
+                return;
+            }
+            manualGpgProgramPath = picked;
+            renderGpgOptions();
+            gpgBinarySelect.value = "__manual__";
+            printLog(`[SYSTEM] Manual GPG program selected: ${picked}`);
+
+            if (signingEnabledCheckbox.checked && selectedSigningMode() === "gpg") {
                 await applySigningConfig();
             }
         } catch (e) {
@@ -400,6 +562,7 @@ export const setupButtonHandlers = ({
         topUI.classList.add("show");
         hideMainButtons();
         void refreshDetectedKeys();
+        void refreshDetectedGpgPrograms();
         void refreshFileList();
     });
 
@@ -699,7 +862,8 @@ export const setupButtonHandlers = ({
                 }
 
                 await refreshDetectedKeys();
-                if (signingEnabledCheckbox.checked && selectedKeyPath()) {
+                await refreshDetectedGpgPrograms();
+                if (signingEnabledCheckbox.checked) {
                     try {
                         await applySigningConfig();
                     } catch (e) {

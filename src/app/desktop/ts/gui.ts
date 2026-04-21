@@ -66,6 +66,51 @@ const btnSigningDisableCancel = document.getElementById("btn-signing-disable-can
 const btnSigningDisableConfirm = document.getElementById("btn-signing-disable-confirm")!;
 const signingVerifiedBadge = document.getElementById("signing-verified-badge")!;
 
+// Build signing mode + GPG controls dynamically so HTML changes are not required.
+const sshSigningSection = sshKeySelect.closest(".ssh-signing-section") as HTMLElement;
+const sshSigningControls = sshKeySelect.parentElement as HTMLElement;
+
+const signingModeRow = document.createElement("div");
+signingModeRow.className = "signing-provider-row";
+
+const signingModeLabel = document.createElement("label");
+signingModeLabel.textContent = "Signing type";
+
+const signingModeSelect = document.createElement("select");
+signingModeSelect.id = "signing-mode-select";
+signingModeSelect.innerHTML = `
+  <option value="ssh">SSH</option>
+  <option value="gpg">GPG</option>
+`;
+signingModeSelect.value = "ssh";
+
+signingModeRow.appendChild(signingModeLabel);
+signingModeRow.appendChild(signingModeSelect);
+
+const gpgSigningControls = document.createElement("div");
+gpgSigningControls.className = "ssh-signing-controls hidden";
+gpgSigningControls.id = "gpg-signing-controls";
+
+const gpgBinarySelect = document.createElement("select");
+gpgBinarySelect.id = "gpg-binary-select";
+
+const btnPickGpgBinary = document.createElement("button");
+btnPickGpgBinary.id = "btn-pick-gpg-binary";
+btnPickGpgBinary.textContent = "Pick GPG EXE";
+btnPickGpgBinary.className = "stage-btn";
+
+const gpgSigningKeyInput = document.createElement("input");
+gpgSigningKeyInput.id = "gpg-signing-key-input";
+gpgSigningKeyInput.placeholder = "Optional GPG key id/email";
+gpgSigningKeyInput.type = "text";
+
+gpgSigningControls.appendChild(gpgBinarySelect);
+gpgSigningControls.appendChild(btnPickGpgBinary);
+gpgSigningControls.appendChild(gpgSigningKeyInput);
+
+sshSigningSection.prepend(signingModeRow);
+sshSigningSection.appendChild(gpgSigningControls);
+
 // staged section
 const stagedSectionEl = document.createElement("div");
 const stagedTitleEl = document.createElement("div");
@@ -156,8 +201,14 @@ const buttonHandlers = setupButtonHandlers({
     btnForcePushConfirm,
     commitMessageEl,
     signingEnabledCheckbox,
+    signingModeSelect,
+    sshSigningControls,
+    gpgSigningControls,
     sshKeySelect,
     btnPickSshKey,
+    gpgBinarySelect,
+    btnPickGpgBinary,
+    gpgSigningKeyInput,
     signingDisableConfirmOverlay,
     btnSigningDisableCancel,
     btnSigningDisableConfirm,
