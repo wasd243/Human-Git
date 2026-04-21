@@ -58,6 +58,13 @@ const forcePushConfirmOverlay = document.getElementById("force-push-confirm-over
 const btnForcePushCancel = document.getElementById("btn-force-push-cancel")!;
 const btnForcePushConfirm = document.getElementById("btn-force-push-confirm")!;
 const commitMessageEl = document.getElementById("commit-message") as HTMLTextAreaElement;
+const signingEnabledCheckbox = document.getElementById("chk-signing-enabled") as HTMLInputElement;
+const sshKeySelect = document.getElementById("ssh-key-select") as HTMLSelectElement;
+const btnPickSshKey = document.getElementById("btn-pick-ssh-key")!;
+const signingDisableConfirmOverlay = document.getElementById("signing-disable-confirm-overlay")!;
+const btnSigningDisableCancel = document.getElementById("btn-signing-disable-cancel")!;
+const btnSigningDisableConfirm = document.getElementById("btn-signing-disable-confirm")!;
+const signingVerifiedBadge = document.getElementById("signing-verified-badge")!;
 
 // staged section
 const stagedSectionEl = document.createElement("div");
@@ -148,6 +155,13 @@ const buttonHandlers = setupButtonHandlers({
     btnForcePushCancel,
     btnForcePushConfirm,
     commitMessageEl,
+    signingEnabledCheckbox,
+    sshKeySelect,
+    btnPickSshKey,
+    signingDisableConfirmOverlay,
+    btnSigningDisableCancel,
+    btnSigningDisableConfirm,
+    signingVerifiedBadge,
     selectedUnstagedPaths,
     refreshFileList,
     setStats,
