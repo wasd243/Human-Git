@@ -1,8 +1,17 @@
 import {invoke} from "@tauri-apps/api/core";
 import type {GpgBinaryInfo, SshKeyInfo} from "./types";
-
-const createKeyLabel = (k: SshKeyInfo) =>
-    k.comment?.trim().length ? `${k.file_name} — ${k.comment}` : k.file_name;
+import {MANUAL_OPTION_VALUE} from "./types";
+import {setupBtnPickSshKey} from "./btnPickSshKey";
+import {setupBtnPickGpgBinary} from "./btnPickGpgBinary";
+import {setupBtnSigningDisableCancel} from "./btnSigningDisableCancel";
+import {setupBtnSigningDisableConfirm} from "./btnSigningDisableConfirm";
+import {setSshSigningControlsVisible} from "./sshSigningControls";
+import {setGpgSigningControlsVisible} from "./gpgSigningControls";
+import {setSigningVerifiedBadgeVisible} from "./signingVerifiedBadge";
+import {renderSshKeyOptions} from "./sshKeySelect";
+import {renderGpgBinaryOptions} from "./gpgBinarySelect";
+import {getGpgSigningKey} from "./gpgSigningKeyInput";
+import {setSigningDisableConfirmOverlayVisible} from "./signingDisableConfirmOverlay";
 
 interface CreateSigningControllerParams {
     signingEnabledCheckbox: HTMLInputElement;
@@ -47,19 +56,19 @@ export const createSigningController = ({
     const selectedKeyPath = () => {
         const value = sshKeySelect.value?.trim();
         if (!value) return null;
-        return value === "__manual__" ? manualKeyPath : value;
+        return value === MANUAL_OPTION_VALUE ? manualKeyPath : value;
     };
 
     const selectedGpgProgramPath = () => {
         const value = gpgBinarySelect.value?.trim();
         if (!value) return null;
-        return value === "__manual__" ? manualGpgProgramPath : value;
+        return value === MANUAL_OPTION_VALUE ? manualGpgProgramPath : value;
     };
 
     const updateSigningModeUI = () => {
         const useGpg = selectedSigningMode() === "gpg";
-        sshSigningControls.classList.toggle("hidden", useGpg);
-        gpgSigningControls.classList.toggle("hidden", !useGpg);
+        setSshSigningControlsVisible(sshSigningControls, !useGpg);
+        setGpgSigningControlsVisible(gpgSigningControls, useGpg);
     };
 
     const updateVerifiedBadge = () => {
@@ -67,94 +76,26 @@ export const createSigningController = ({
             ? !!selectedGpgProgramPath()
             : !!selectedKeyPath();
         const show = signingEnabledCheckbox.checked && selected;
-        signingVerifiedBadge.classList.toggle("hidden", !show);
+        setSigningVerifiedBadgeVisible(signingVerifiedBadge, show);
     };
 
     const renderKeyOptions = () => {
-        const previousValue = sshKeySelect.value;
-        sshKeySelect.replaceChildren();
-
-        if (detectedKeys.length === 0 && !manualKeyPath) {
-            const opt = document.createElement("option");
-            opt.value = "";
-            opt.textContent = "No SSH key detected";
-            sshKeySelect.appendChild(opt);
-            sshKeySelect.disabled = true;
-            updateVerifiedBadge();
-            return;
-        }
-
-        sshKeySelect.disabled = false;
-
-        for (const key of detectedKeys) {
-            const opt = document.createElement("option");
-            opt.value = key.full_path;
-            opt.textContent = createKeyLabel(key);
-            sshKeySelect.appendChild(opt);
-        }
-
-        if (manualKeyPath) {
-            const opt = document.createElement("option");
-            opt.value = "__manual__";
-            opt.textContent = `Manual key — ${manualKeyPath}`;
-            sshKeySelect.appendChild(opt);
-        }
-
-        if (previousValue) {
-            const hasPrevious = Array.from(sshKeySelect.options).some((o) => o.value === previousValue);
-            if (hasPrevious) {
-                sshKeySelect.value = previousValue;
-            }
-        }
-
-        if (!sshKeySelect.value && sshKeySelect.options.length > 0) {
-            sshKeySelect.selectedIndex = 0;
-        }
-
+        renderSshKeyOptions({
+            sshKeySelect,
+            detectedKeys,
+            manualKeyPath,
+            manualOptionValue: MANUAL_OPTION_VALUE
+        });
         updateVerifiedBadge();
     };
 
     const renderGpgOptions = () => {
-        const previousValue = gpgBinarySelect.value;
-        gpgBinarySelect.replaceChildren();
-
-        if (detectedGpgBinaries.length === 0 && !manualGpgProgramPath) {
-            const opt = document.createElement("option");
-            opt.value = "";
-            opt.textContent = "No GPG binary detected";
-            gpgBinarySelect.appendChild(opt);
-            gpgBinarySelect.disabled = true;
-            updateVerifiedBadge();
-            return;
-        }
-
-        gpgBinarySelect.disabled = false;
-
-        for (const bin of detectedGpgBinaries) {
-            const opt = document.createElement("option");
-            opt.value = bin.full_path;
-            opt.textContent = `${bin.file_name} — ${bin.full_path}`;
-            gpgBinarySelect.appendChild(opt);
-        }
-
-        if (manualGpgProgramPath) {
-            const opt = document.createElement("option");
-            opt.value = "__manual__";
-            opt.textContent = `Manual program — ${manualGpgProgramPath}`;
-            gpgBinarySelect.appendChild(opt);
-        }
-
-        if (previousValue) {
-            const hasPrevious = Array.from(gpgBinarySelect.options).some((o) => o.value === previousValue);
-            if (hasPrevious) {
-                gpgBinarySelect.value = previousValue;
-            }
-        }
-
-        if (!gpgBinarySelect.value && gpgBinarySelect.options.length > 0) {
-            gpgBinarySelect.selectedIndex = 0;
-        }
-
+        renderGpgBinaryOptions({
+            gpgBinarySelect,
+            detectedGpgBinaries,
+            manualGpgProgramPath,
+            manualOptionValue: MANUAL_OPTION_VALUE
+        });
         updateVerifiedBadge();
     };
 
@@ -178,7 +119,7 @@ export const createSigningController = ({
                 return;
             }
 
-            const signingKey = gpgSigningKeyInput.value.trim() || null;
+            const signingKey = getGpgSigningKey(gpgSigningKeyInput);
             const result = await invoke<string>("enable_gpg_signing", {gpgProgramPath, signingKey});
             printLog(`[SUCCESS] ${result}`);
             updateVerifiedBadge();
@@ -260,49 +201,37 @@ export const createSigningController = ({
             }
         });
 
-        btnPickSshKey.addEventListener("click", async () => {
-            try {
-                const picked = await invoke<string | null>("pick_ssh_key_file");
-                if (!picked) {
-                    printLog("[SYSTEM] SSH key file selection cancelled.");
-                    return;
-                }
-                manualKeyPath = picked;
-                renderKeyOptions();
-                sshKeySelect.value = "__manual__";
-                printLog(`[SYSTEM] Manual SSH key selected: ${picked}`);
-
-                if (signingEnabledCheckbox.checked && selectedSigningMode() === "ssh") {
-                    await applySigningConfig();
-                }
-            } catch (e) {
-                printLog(`[ERR] ${e}`);
-            }
+        setupBtnPickSshKey({
+            btnPickSshKey,
+            sshKeySelect,
+            setManualKeyPath: (path) => {
+                manualKeyPath = path;
+            },
+            renderKeyOptions,
+            signingEnabledCheckbox,
+            selectedSigningMode,
+            applySigningConfig,
+            printLog,
+            manualOptionValue: MANUAL_OPTION_VALUE
         });
 
-        btnPickGpgBinary.addEventListener("click", async () => {
-            try {
-                const picked = await invoke<string | null>("pick_gpg_program_file");
-                if (!picked) {
-                    printLog("[SYSTEM] GPG program selection cancelled.");
-                    return;
-                }
-                manualGpgProgramPath = picked;
-                renderGpgOptions();
-                gpgBinarySelect.value = "__manual__";
-                printLog(`[SYSTEM] Manual GPG program selected: ${picked}`);
-
-                if (signingEnabledCheckbox.checked && selectedSigningMode() === "gpg") {
-                    await applySigningConfig();
-                }
-            } catch (e) {
-                printLog(`[ERR] ${e}`);
-            }
+        setupBtnPickGpgBinary({
+            btnPickGpgBinary,
+            gpgBinarySelect,
+            setManualGpgProgramPath: (path) => {
+                manualGpgProgramPath = path;
+            },
+            renderGpgOptions,
+            signingEnabledCheckbox,
+            selectedSigningMode,
+            applySigningConfig,
+            printLog,
+            manualOptionValue: MANUAL_OPTION_VALUE
         });
 
         signingEnabledCheckbox.addEventListener("change", async () => {
             if (!signingEnabledCheckbox.checked) {
-                signingDisableConfirmOverlay.classList.remove("hidden");
+                setSigningDisableConfirmOverlayVisible(signingDisableConfirmOverlay, true);
                 signingEnabledCheckbox.checked = true;
                 return;
             }
@@ -314,20 +243,19 @@ export const createSigningController = ({
             }
         });
 
-        btnSigningDisableCancel.addEventListener("click", () => {
-            signingDisableConfirmOverlay.classList.add("hidden");
-            signingEnabledCheckbox.checked = true;
-            updateVerifiedBadge();
+        setupBtnSigningDisableCancel({
+            btnSigningDisableCancel,
+            signingDisableConfirmOverlay,
+            signingEnabledCheckbox,
+            updateVerifiedBadge
         });
 
-        btnSigningDisableConfirm.addEventListener("click", async () => {
-            signingDisableConfirmOverlay.classList.add("hidden");
-            signingEnabledCheckbox.checked = false;
-            try {
-                await applySigningConfig();
-            } catch (e) {
-                printLog(`[ERR] ${e}`);
-            }
+        setupBtnSigningDisableConfirm({
+            btnSigningDisableConfirm,
+            signingDisableConfirmOverlay,
+            signingEnabledCheckbox,
+            applySigningConfig,
+            printLog
         });
     };
 
