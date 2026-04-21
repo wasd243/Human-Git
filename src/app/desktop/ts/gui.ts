@@ -96,7 +96,8 @@ gpgBinarySelect.id = "gpg-binary-select";
 
 const btnPickGpgBinary = document.createElement("button");
 btnPickGpgBinary.id = "btn-pick-gpg-binary";
-btnPickGpgBinary.textContent = "Pick GPG EXE";
+btnPickGpgBinary.textContent = "GPG.exe";
+btnPickGpgBinary.style.color = "#F0F0F0";
 btnPickGpgBinary.className = "quick-deploy-btn";
 
 const gpgSigningKeyInput = document.createElement("input");

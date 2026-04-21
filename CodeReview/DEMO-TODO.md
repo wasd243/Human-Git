@@ -15,7 +15,7 @@
 - [x] Let GitHub Copilot write an CR of `v0.1.0-alpha.10-pre-1`;
 - [x] Review and fix bugs in CR;
 - [x] Refactorization and decomposition of large files (if so);
-- [ ] Support GPG signing in `v0.1.0-alpha.10-pre-2`;
+- [x] Support GPG signing in `v0.1.0-alpha.10-pre-2`;
 - [ ] Let GitHub Copilot write an CR of `v0.1.0-alpha.10-pre-2`;
 - [ ] Review and fix bugs in CR;
 - [ ] Pull Request to `main` branch;
