@@ -52,16 +52,27 @@ fn normalize_gpg_program_path(input_path: &str) -> Result<PathBuf, String> {
 
     #[cfg(target_os = "windows")]
     {
-        let is_exe = provided
-            .extension()
-            .and_then(|e| e.to_str())
-            .is_some_and(|e| e.eq_ignore_ascii_case("exe"));
-        if !is_exe {
-            return Err("On Windows, please select a .exe file for GPG program.".to_string());
+        if !is_supported_windows_gpg_signer(&provided) {
+            return Err("On Windows, please select gpg.exe or gpg2.exe for GPG program.".to_string());
         }
     }
 
     Ok(provided)
+}
+
+#[cfg(target_os = "windows")]
+fn is_supported_windows_gpg_signer(path: &Path) -> bool {
+    let is_exe = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("exe"));
+    if !is_exe {
+        return false;
+    }
+
+    path.file_stem()
+        .and_then(|n| n.to_str())
+        .is_some_and(|n| matches!(n.to_ascii_lowercase().as_str(), "gpg" | "gpg2"))
 }
 
 async fn current_repo_path_from_state(state: &tauri::State<'_, AppState>) -> Result<String, String> {
@@ -97,10 +108,7 @@ pub async fn detect_gpg_binaries() -> Result<Vec<GpgBinaryInfo>, String> {
             }
 
             #[cfg(target_os = "windows")]
-            let valid = path
-                .extension()
-                .and_then(|e| e.to_str())
-                .is_some_and(|e| e.eq_ignore_ascii_case("exe"));
+            let valid = is_supported_windows_gpg_signer(&path);
 
             #[cfg(not(target_os = "windows"))]
             let valid = path
