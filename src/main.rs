@@ -19,6 +19,7 @@ pub mod modules {
         pub mod pull;
         pub mod push;
         pub mod remote;
+        pub mod tag;
     }
     // Git core
     pub mod git {
@@ -88,6 +89,7 @@ async fn main() -> anyhow::Result<()> {
             handlers::fetch_changes,
             handlers::add_remote_origin,
             handlers::list_remotes,
+            handlers::list_tags,
             handlers::get_working_status,
             open_folder::update_repo_path,
             open_folder::open_folder_dialog,

@@ -196,6 +196,35 @@
     right: 0;
 }
 
+.tag-ui {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: -8px 0 32px 0 rgba(0, 0, 0, 0.1);
+    transition: right 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    animation: topUiColorSwitch 2s infinite alternate ease-in-out;
+    padding-top: 90px;
+    box-sizing: border-box;
+    gap: 18px;
+}
+
+.tag-ui.show {
+    right: 0;
+}
+
 .hidden {
     display: none !important;
 }
@@ -444,6 +473,58 @@
     border-radius: 8px;
     padding: 8px;
     background: rgba(255, 255, 255, 0.03);
+}
+
+#tag-list-section {
+    width: min(80vw, 900px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#tag-list-title {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+#tag-list {
+    min-height: 120px;
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.tag-item {
+    display: grid;
+    grid-template-columns: minmax(180px, 260px) minmax(240px, 320px) 1fr;
+    gap: 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.tag-item:last-child {
+    border-bottom: none;
+}
+
+.tag-item .tag-name,
+.tag-item .tag-hash {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    word-break: break-all;
+}
+
+.tag-item .tag-commit {
+    color: rgba(242, 234, 218, 0.95);
+}
+
+.tag-item.tag-item-header {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .remote-item {

@@ -11,6 +11,7 @@
 <main id="app-container">
 
     <button id="btn-git-init" class="human-git-main-btn">Find a Repo</button>
+    <button id="btn-open-tag-ui" class="human-git-main-btn">Show Tags</button>
     <button id="btn-open-pull-ui" class="human-git-main-btn">Pull & Fetch & Remote</button>
     <button id="btn-show-changes" class="human-git-main-btn">Show Changes</button>
 
@@ -167,6 +168,15 @@
                 <button id="btn-fetch-prune-confirm" class="human-git-main-btn pull-btn danger-btn">Open -p</button>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="tag-ui" class="tag-ui">
+    <button id="btn-close-tag-ui" class="close-btn">✕</button>
+
+    <div id="tag-list-section">
+        <div id="tag-list-title">Repository Tags</div>
+        <div id="tag-list"></div>
     </div>
 </div>
 
