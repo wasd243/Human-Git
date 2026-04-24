@@ -27,7 +27,7 @@ const createTagRow = (tagInfo: TagInfo): HTMLDivElement => {
     tagHash.setAttribute("aria-label", `Toggle hash visibility for tag ${tagInfo.tag}`);
 
     const fullHash = tagInfo.hash;
-    const foldedHash = "••••••••";
+    const foldedHash = "+Hash";
     let isHashVisible = false;
 
     const renderHash = () => {
