@@ -1,5 +1,8 @@
 import {invoke} from "@tauri-apps/api/core";
 import {createTagMessageRow, renderTagList, type TagInfo} from "./listTag";
+import {setTagCreateOverlayVisible} from "./btnTagCreateOverlay";
+import {setupBtnTagCreateCancel} from "./btnTagCreateCancel";
+import {setupBtnTagCreateConfirm} from "./btnTagCreateConfirm";
 
 interface SetupBtnCreateTagParams {
     tagUI: HTMLElement;
@@ -22,7 +25,6 @@ const ensureTagCreateElements = (tagUI: HTMLElement): TagCreateElements => {
         btnCreateTag.id = "btn-create-tag";
         btnCreateTag.className = "quick-deploy-btn";
         btnCreateTag.textContent = "Create Tag";
-        btnCreateTag.style.color = "#F0F0F0";
         tagUI.insertAdjacentElement("afterbegin", btnCreateTag);
     }
 
@@ -38,9 +40,7 @@ const ensureTagCreateElements = (tagUI: HTMLElement): TagCreateElements => {
         overlay = document.createElement("div");
         overlay.id = "tag-create-confirm-overlay";
         overlay.className = templateOverlay?.className ?? "confirm-overlay hidden";
-        if (!overlay.classList.contains("hidden")) {
-            overlay.classList.add("hidden");
-        }
+        overlay.classList.add("hidden");
 
         const panel = document.createElement("div");
         panel.className = templatePanel?.className ?? "confirm-dialog";
@@ -80,7 +80,7 @@ const ensureTagCreateElements = (tagUI: HTMLElement): TagCreateElements => {
         });
 
         overlay.addEventListener("click", () => {
-            overlay!.classList.add("hidden");
+            setTagCreateOverlayVisible(overlay!, false);
         });
     }
 
@@ -100,16 +100,6 @@ export const setupBtnCreateTag = ({
 }: SetupBtnCreateTagParams) => {
     const {btnCreateTag, overlay, textarea, btnCancel, btnConfirm} = ensureTagCreateElements(tagUI);
 
-    const hideOverlay = () => {
-        overlay.classList.add("hidden");
-    };
-
-    const showOverlay = () => {
-        textarea.value = "";
-        overlay.classList.remove("hidden");
-        textarea.focus();
-    };
-
     const refreshTagList = async () => {
         try {
             const tags = await invoke<TagInfo[]>("list_tags");
@@ -121,32 +111,23 @@ export const setupBtnCreateTag = ({
         }
     };
 
-    btnCreateTag.addEventListener("click", showOverlay);
-
-    btnCancel.addEventListener("click", () => {
-        hideOverlay();
+    btnCreateTag.addEventListener("click", () => {
+        textarea.value = "";
+        setTagCreateOverlayVisible(overlay, true);
+        textarea.focus();
     });
 
-    btnConfirm.addEventListener("click", async () => {
-        const tagName = textarea.value.trim();
+    setupBtnTagCreateCancel({
+        btnTagCreateCancel: btnCancel,
+        tagCreateConfirmOverlay: overlay,
+        printLog
+    });
 
-        if (!tagName) {
-            printLog("[ERR] Tag name cannot be empty.");
-            return;
-        }
-
-        btnConfirm.disabled = true;
-        printLog(`[GIT] Creating tag '${tagName}'...`);
-
-        try {
-            const result = await invoke<string>("create_tag", {tag_name: tagName});
-            printLog(`[SUCCESS] ${result}`);
-            hideOverlay();
-            await refreshTagList();
-        } catch (e) {
-            printLog(`[ERR] ${e}`);
-        } finally {
-            btnConfirm.disabled = false;
-        }
+    setupBtnTagCreateConfirm({
+        btnTagCreateConfirm: btnConfirm,
+        tagCreateConfirmOverlay: overlay,
+        tagCreateNameInput: textarea,
+        refreshTagList,
+        printLog
     });
 };
