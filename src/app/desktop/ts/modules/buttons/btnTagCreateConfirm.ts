@@ -28,7 +28,7 @@ export const setupBtnTagCreateConfirm = ({
         printLog(`[GIT] Creating tag '${tagName}'...`);
 
         try {
-            const result = await invoke<string>("create_tag", {tag_name: tagName});
+            const result = await invoke<string>("create_tag", {tagName});
             printLog(`[SUCCESS] ${result}`);
             setTagCreateOverlayVisible(tagCreateConfirmOverlay, false);
             await refreshTagList();
