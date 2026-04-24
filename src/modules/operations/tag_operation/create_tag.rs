@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use git2::{ObjectType, Repository};
+use std::process::Command;
 
 fn validate_tag_name(tag_name: &str) -> Result<()> {
     let name = tag_name.trim();
@@ -60,16 +60,27 @@ pub fn create_tag(repo_path: &str, tag_name: &str) -> Result<String> {
     let name = tag_name.trim();
     validate_tag_name(name)?;
 
-    let repo = Repository::open(repo_path).context("Failed to open current repository")?;
-    let head = repo
-        .head()
-        .context("Failed to resolve HEAD. Commit at least once before tagging.")?;
-    let target = head
-        .peel(ObjectType::Commit)
-        .context("Failed to resolve HEAD commit for tagging.")?;
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .arg("tag")
+        .arg(name)
+        .output()
+        .context("Failed to execute 'git tag' command")?;
 
-    repo.tag_lightweight(name, &target, false)
-        .with_context(|| format!("Failed to create tag '{}'", name))?;
+    if output.status.success() {
+        Ok(format!("Tag '{}' created.", name))
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let details = if !stderr.is_empty() {
+            stderr
+        } else if !stdout.is_empty() {
+            stdout
+        } else {
+            "Unknown git error.".to_string()
+        };
 
-    Ok(format!("Tag '{}' created.", name))
+        Err(anyhow!("Failed to create tag '{}': {}", name, details))
+    }
 }
