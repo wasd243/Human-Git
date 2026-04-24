@@ -2,7 +2,12 @@
 
 - [x] GPG signing support;
 - [ ] branch graph;
-- [ ] tags graph;
+- [x] tags graph;
+- [ ] create a tag
+- [ ] create a branch;
+- [ ] create a PR;
+- [ ] delete a tag;
+- [ ] delete a branch;
 - [ ] PR graph;
 - [ ] web-link to PR;
 - [ ] web-link to CI/CD;
