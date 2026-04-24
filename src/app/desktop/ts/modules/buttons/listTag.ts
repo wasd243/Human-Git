@@ -1,6 +1,7 @@
 export interface TagInfo {
     tag: string;
     hash: string;
+    created_at: number;
     commit: string;
 }
 
@@ -9,6 +10,16 @@ export const createTagMessageRow = (message: string): HTMLDivElement => {
     row.className = "tag-item";
     row.textContent = message;
     return row;
+};
+
+const formatRelativeDays = (unixSeconds: number): string => {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const diffSeconds = Math.max(0, nowSeconds - unixSeconds);
+    const days = Math.floor(diffSeconds / 86400);
+
+    if (days <= 0) return "today";
+    if (days === 1) return "1 day ago";
+    return `${days} days ago`;
 };
 
 const createTagRow = (tagInfo: TagInfo): HTMLDivElement => {
@@ -50,12 +61,17 @@ const createTagRow = (tagInfo: TagInfo): HTMLDivElement => {
 
     renderHash();
 
+    const tagCreated = document.createElement("span");
+    tagCreated.className = "tag-created";
+    tagCreated.textContent = formatRelativeDays(tagInfo.created_at);
+
     const tagCommit = document.createElement("span");
     tagCommit.className = "tag-commit";
     tagCommit.textContent = tagInfo.commit;
 
     row.appendChild(tagName);
     row.appendChild(tagHash);
+    row.appendChild(tagCreated);
     row.appendChild(tagCommit);
     return row;
 };
@@ -72,12 +88,17 @@ const createTagHeaderRow = (): HTMLDivElement => {
     tagHash.className = "tag-hash";
     tagHash.textContent = "Hash";
 
+    const tagCreated = document.createElement("span");
+    tagCreated.className = "tag-created";
+    tagCreated.textContent = "Created";
+
     const tagCommit = document.createElement("span");
     tagCommit.className = "tag-commit";
     tagCommit.textContent = "Commit";
 
     row.appendChild(tagName);
     row.appendChild(tagHash);
+    row.appendChild(tagCreated);
     row.appendChild(tagCommit);
     return row;
 };

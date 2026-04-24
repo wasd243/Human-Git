@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct TagInfo {
     pub tag: String,
     pub hash: String,
+    pub created_at: i64,
     pub commit: String,
 }
 
@@ -42,6 +43,7 @@ pub fn list_tags(repo_path: &str) -> Result<Vec<TagInfo>> {
             TagInfo {
                 tag: tag_name.to_string(),
                 hash: commit.id().to_string(),
+                created_at: tag_ts,
                 commit: commit
                     .summary()
                     .unwrap_or("<no-commit-message>")
