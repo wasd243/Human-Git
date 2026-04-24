@@ -33,6 +33,8 @@ import {setupBtnForcePushConfirm} from "./buttons/btnForcePushConfirm";
 import {setupBtnQuickDeploy} from "./buttons/btnQuickDeploy";
 import {setupBtnRemoteCancel} from "./buttons/btnRemoteCancel";
 import {setupBtnRemoteConfirm} from "./buttons/btnRemoteConfirm";
+import {setupBtnPullCancel} from "./buttons/btnPullCancel";
+import {setupBtnPullConfirm} from "./buttons/btnPullConfirm";
 import {applyForcePushToggleLabelState} from "./buttons/forcePushToggleLabel";
 import {asFileListEl} from "./buttons/fileListEl";
 import {asStagedListEl} from "./buttons/stagedListEl";
@@ -173,6 +175,10 @@ export const setupButtonHandlers = ({
 
     const invokeFetch = async (prune: boolean): Promise<string> => {
         return await invoke<string>("fetch_changes", {remote: ORIGIN_REMOTE, prune});
+    };
+
+    const invokePull = async (): Promise<string> => {
+        return await invoke<string>("pull_changes");
     };
 
     const showMainButtons = () => {
@@ -422,21 +428,17 @@ export const setupButtonHandlers = ({
         printLog
     });
 
-    btnPullCancel.addEventListener("click", () => {
-        pullConfirmOverlay.classList.add("hidden");
+    setupBtnPullCancel({
+        btnPullCancel,
+        pullConfirmOverlay
     });
 
-    btnPullConfirm.addEventListener("click", async () => {
-        pullConfirmOverlay.classList.add("hidden");
-        printLog("[GIT] Pulling current branch from origin...");
-
-        try {
-            const result = await invoke<string>("pull_changes");
-            printLog(`[SUCCESS] ${result}`);
-            await refreshFileList();
-        } catch (e) {
-            printLog(`[ERR] ${e}`);
-        }
+    setupBtnPullConfirm({
+        btnPullConfirm,
+        pullConfirmOverlay,
+        printLog,
+        refreshFileList,
+        invokePull
     });
 
     setupBtnRemoteCancel({
