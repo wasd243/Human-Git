@@ -540,8 +540,9 @@
 }
 
 .confirm-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
+    z-index: 2000;
     background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
@@ -569,6 +570,25 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+}
+
+#tag-create-name-input {
+    width: 100%;
+    min-height: 74px;
+    resize: vertical;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 0.5px solid rgba(255, 255, 255, 0.2);
+    background: rgba(20, 20, 20, 0.28);
+    color: rgba(242, 234, 218, 0.95);
+    padding: 10px 12px;
+    font-family: inherit;
+    margin-bottom: 14px;
+}
+
+#tag-create-name-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.45);
 }
 
 .ssh-signing-section {

@@ -22,7 +22,6 @@ const ensureTagCreateElements = (tagUI: HTMLElement): TagCreateElements => {
         btnCreateTag.id = "btn-create-tag";
         btnCreateTag.className = "quick-deploy-btn";
         btnCreateTag.textContent = "Create Tag";
-        btnCreateTag.style.color = "#F0F0F0";
         tagUI.insertAdjacentElement("afterbegin", btnCreateTag);
     }
 
@@ -54,18 +53,16 @@ const ensureTagCreateElements = (tagUI: HTMLElement): TagCreateElements => {
         textarea.rows = 2;
 
         const actions = document.createElement("div");
-        actions.className = "confirm-actions";
+        actions.className = "confirm-buttons";
 
         btnCancel = document.createElement("button");
         btnCancel.id = "btn-tag-create-cancel";
         btnCancel.className = "quick-deploy-btn";
-        btnCancel.style.color = "#F0F0F0";
         btnCancel.textContent = "Cancel";
 
         btnConfirm = document.createElement("button");
         btnConfirm.id = "btn-tag-create-confirm";
         btnConfirm.className = "quick-deploy-btn";
-        btnConfirm.style.color = "#F0F0F0";
         btnConfirm.textContent = "Create";
 
         actions.appendChild(btnCancel);
