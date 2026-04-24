@@ -22,6 +22,7 @@ const ensureTagCreateElements = (tagUI: HTMLElement): TagCreateElements => {
         btnCreateTag.id = "btn-create-tag";
         btnCreateTag.className = "quick-deploy-btn";
         btnCreateTag.textContent = "Create Tag";
+        btnCreateTag.style.color = "#F0F0F0";
         tagUI.insertAdjacentElement("afterbegin", btnCreateTag);
     }
 
