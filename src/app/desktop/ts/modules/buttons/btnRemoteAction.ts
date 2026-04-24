@@ -1,4 +1,3 @@
-import {setFetchPruneConfirmOverlayVisible} from "./fetchPruneConfirmOverlay";
 import {isRemoteInputPanelHidden, showRemoteInputPanel} from "./remoteInputPanel";
 import {CSS_CLASS_HIDDEN} from "./types";
 
@@ -39,6 +38,5 @@ export const setupBtnRemoteAction = ({
         }
 
         remoteConfirmOverlay.classList.remove(CSS_CLASS_HIDDEN);
-        setFetchPruneConfirmOverlayVisible;
     });
 };
