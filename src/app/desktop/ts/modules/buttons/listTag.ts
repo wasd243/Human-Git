@@ -5,12 +5,13 @@ export interface TagInfo {
     commit: string;
 }
 
-export const createTagMessageRow = (message: string): HTMLDivElement => {
-    const row = document.createElement("div");
-    row.className = "tag-item";
-    row.textContent = message;
-    return row;
-};
+const escapeHtml = (value: string): string =>
+    value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
 
 const formatRelativeDays = (unixSeconds: number): string => {
     const nowSeconds = Math.floor(Date.now() / 1000);
@@ -22,98 +23,58 @@ const formatRelativeDays = (unixSeconds: number): string => {
     return `${days} days ago`;
 };
 
-const createTagRow = (tagInfo: TagInfo): HTMLDivElement => {
-    const row = document.createElement("div");
-    row.className = "tag-item";
+const buildHeaderRow = (): string => `
+<div class="tag-item tag-item-header">
+    <span class="tag-name">Tag</span>
+    <span class="tag-hash">Hash</span>
+    <span class="tag-created">Created</span>
+    <span class="tag-commit">Commit</span>
+</div>
+`;
 
-    const tagName = document.createElement("span");
-    tagName.className = "tag-name";
-    tagName.textContent = tagInfo.tag;
+const buildTagRow = (tagInfo: TagInfo): string => `
+<div class="tag-item">
+    <span class="tag-name">${escapeHtml(tagInfo.tag)}</span>
+    <button
+        type="button"
+        class="tag-hash tag-hash-toggle"
+        data-full-hash="${escapeHtml(tagInfo.hash)}"
+        aria-expanded="false"
+        title="Click to show hash"
+    >+Hash</button>
+    <span class="tag-created">${formatRelativeDays(tagInfo.created_at)}</span>
+    <span class="tag-commit" title="${escapeHtml(tagInfo.commit)}">${escapeHtml(tagInfo.commit)}</span>
+</div>
+`;
 
-    const tagHash = document.createElement("span");
-    tagHash.className = "tag-hash";
-    tagHash.style.cursor = "pointer";
-    tagHash.tabIndex = 0;
-    tagHash.setAttribute("role", "button");
-    tagHash.setAttribute("aria-label", `Toggle hash visibility for tag ${tagInfo.tag}`);
+const bindHashToggleHandlers = (tagListEl: HTMLElement) => {
+    const hashButtons = tagListEl.querySelectorAll<HTMLButtonElement>(".tag-hash-toggle");
 
-    const fullHash = tagInfo.hash;
-    const foldedHash = "+Hash";
-    let isHashVisible = false;
+    for (const hashButton of hashButtons) {
+        hashButton.addEventListener("click", () => {
+            const fullHash = hashButton.dataset.fullHash ?? "";
+            const isExpanded = hashButton.getAttribute("aria-expanded") === "true";
 
-    const renderHash = () => {
-        tagHash.textContent = isHashVisible ? fullHash : foldedHash;
-        tagHash.title = isHashVisible ? "Click to hide hash" : "Click to show hash";
-    };
-
-    const toggleHashVisibility = () => {
-        isHashVisible = !isHashVisible;
-        renderHash();
-    };
-
-    tagHash.addEventListener("click", toggleHashVisibility);
-    tagHash.addEventListener("keydown", (event: KeyboardEvent) => {
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            toggleHashVisibility();
-        }
-    });
-
-    renderHash();
-
-    const tagCreated = document.createElement("span");
-    tagCreated.className = "tag-created";
-    tagCreated.textContent = formatRelativeDays(tagInfo.created_at);
-
-    const tagCommit = document.createElement("span");
-    tagCommit.className = "tag-commit";
-    tagCommit.textContent = tagInfo.commit;
-
-    row.appendChild(tagName);
-    row.appendChild(tagHash);
-    row.appendChild(tagCreated);
-    row.appendChild(tagCommit);
-    return row;
-};
-
-const createTagHeaderRow = (): HTMLDivElement => {
-    const row = document.createElement("div");
-    row.className = "tag-item tag-item-header";
-
-    const tagName = document.createElement("span");
-    tagName.className = "tag-name";
-    tagName.textContent = "Tag";
-
-    const tagHash = document.createElement("span");
-    tagHash.className = "tag-hash";
-    tagHash.textContent = "Hash";
-
-    const tagCreated = document.createElement("span");
-    tagCreated.className = "tag-created";
-    tagCreated.textContent = "Created";
-
-    const tagCommit = document.createElement("span");
-    tagCommit.className = "tag-commit";
-    tagCommit.textContent = "Commit";
-
-    row.appendChild(tagName);
-    row.appendChild(tagHash);
-    row.appendChild(tagCreated);
-    row.appendChild(tagCommit);
-    return row;
+            if (isExpanded) {
+                hashButton.textContent = "+Hash";
+                hashButton.setAttribute("aria-expanded", "false");
+                hashButton.title = "Click to show hash";
+            } else {
+                hashButton.textContent = fullHash;
+                hashButton.setAttribute("aria-expanded", "true");
+                hashButton.title = "Click to hide hash";
+            }
+        });
+    }
 };
 
 export const renderTagList = (tagListEl: HTMLElement, tags: TagInfo[]) => {
-    tagListEl.replaceChildren();
-
     if (tags.length === 0) {
-        tagListEl.appendChild(createTagMessageRow("No tags found."));
+        tagListEl.innerHTML = `<div class="tag-item tag-item-empty">No tags found.</div>`;
         return;
     }
 
-    tagListEl.appendChild(createTagHeaderRow());
-
-    for (const tagInfo of tags) {
-        tagListEl.appendChild(createTagRow(tagInfo));
-    }
+    const rows = tags.map(buildTagRow).join("");
+    tagListEl.innerHTML = `${buildHeaderRow()}${rows}`;
+    bindHashToggleHandlers(tagListEl);
 };

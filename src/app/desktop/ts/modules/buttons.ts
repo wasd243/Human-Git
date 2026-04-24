@@ -38,7 +38,7 @@ import {asFileListEl} from "./buttons/fileListEl";
 import {asStagedListEl} from "./buttons/stagedListEl";
 import {createSigningController} from "./buttons/signingModeSelect";
 import {createRemoteMessageRow, isValidGitRemoteUrl, renderRemoteList} from "./buttons/printLog";
-import {createTagMessageRow, renderTagList, type TagInfo} from "./buttons/listTag";
+import {renderTagList, type TagInfo} from "./buttons/listTag";
 
 export const setupButtonHandlers = ({
     btnShowChanges,
@@ -194,8 +194,7 @@ export const setupButtonHandlers = ({
             const tags = await invoke<TagInfo[]>("list_tags");
             renderTagList(tagListEl, tags);
         } catch (e) {
-            tagListEl.replaceChildren();
-            tagListEl.appendChild(createTagMessageRow("Failed to load tags."));
+            tagListEl.innerHTML = `<div class="tag-item tag-item-empty">Failed to load tags.</div>`;
             printLog(`[ERR] Failed to fetch tags: ${e}`);
         }
     };

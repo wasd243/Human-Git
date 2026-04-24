@@ -216,9 +216,9 @@
     justify-content: flex-start;
     align-items: center;
     animation: topUiColorSwitch 2s infinite alternate ease-in-out;
-    padding-top: 90px;
+    padding: 90px 24px 24px;
     box-sizing: border-box;
-    gap: 18px;
+    gap: 16px;
 }
 
 .tag-ui.show {
@@ -475,16 +475,29 @@
     background: rgba(255, 255, 255, 0.03);
 }
 
+#tag-ui-toolbar {
+    width: min(90vw, 1040px);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 4px 0;
+}
+
+#btn-create-tag {
+    width: 180px;
+}
+
 #tag-list-section {
-    width: min(80vw, 900px);
+    width: min(90vw, 1040px);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 #tag-list-title {
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 #tag-list {
@@ -492,16 +505,17 @@
     max-height: 70vh;
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 8px;
     background: rgba(255, 255, 255, 0.03);
 }
 
 .tag-item {
     display: grid;
-    grid-template-columns: minmax(180px, 260px) minmax(240px, 320px) 1fr;
+    grid-template-columns: minmax(150px, 240px) minmax(90px, 120px) minmax(110px, 130px) 1fr;
     gap: 12px;
-    padding: 8px 10px;
+    align-items: center;
+    padding: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     font-size: 12px;
     line-height: 1.4;
@@ -511,20 +525,54 @@
     border-bottom: none;
 }
 
-.tag-item .tag-name,
-.tag-item .tag-hash {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-    word-break: break-all;
-}
-
-.tag-item .tag-commit {
-    color: rgba(242, 234, 218, 0.95);
-}
-
 .tag-item.tag-item-header {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.tag-item.tag-item-empty {
+    grid-template-columns: 1fr;
+    color: rgba(242, 234, 218, 0.9);
+}
+
+.tag-name,
+.tag-hash {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    word-break: break-all;
+}
+
+.tag-created {
+    color: rgba(242, 234, 218, 0.85);
+}
+
+.tag-commit {
+    color: rgba(242, 234, 218, 0.95);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tag-hash-toggle {
+    width: auto;
+    padding: 2px 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    text-align: left;
+    cursor: pointer;
+    color: rgba(242, 234, 218, 0.92);
+}
+
+.tag-hash-toggle:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.tag-hash-toggle:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 2px;
 }
 
 .remote-item {

@@ -174,9 +174,24 @@
 <div id="tag-ui" class="tag-ui">
     <button id="btn-close-tag-ui" class="close-btn">✕</button>
 
+    <div id="tag-ui-toolbar">
+        <button id="btn-create-tag" class="human-git-main-btn pull-btn" type="button">Create Tag</button>
+    </div>
+
     <div id="tag-list-section">
-        <div id="tag-list-title">Tags</div>
+        <div id="tag-list-title">Repository Tags</div>
         <div id="tag-list"></div>
+    </div>
+
+    <div id="tag-create-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>Create a new tag for current HEAD?</p>
+            <textarea id="tag-create-name-input" placeholder="Enter tag name (e.g. v1.2.0)"></textarea>
+            <div class="confirm-buttons">
+                <button id="btn-tag-create-cancel" class="human-git-main-btn pull-btn">Cancel</button>
+                <button id="btn-tag-create-confirm" class="human-git-main-btn pull-btn">Create</button>
+            </div>
+        </div>
     </div>
 </div>
 
