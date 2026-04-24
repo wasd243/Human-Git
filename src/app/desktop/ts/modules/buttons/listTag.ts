@@ -21,7 +21,34 @@ const createTagRow = (tagInfo: TagInfo): HTMLDivElement => {
 
     const tagHash = document.createElement("span");
     tagHash.className = "tag-hash";
-    tagHash.textContent = tagInfo.hash;
+    tagHash.style.cursor = "pointer";
+    tagHash.tabIndex = 0;
+    tagHash.setAttribute("role", "button");
+    tagHash.setAttribute("aria-label", `Toggle hash visibility for tag ${tagInfo.tag}`);
+
+    const fullHash = tagInfo.hash;
+    const foldedHash = "••••••••";
+    let isHashVisible = false;
+
+    const renderHash = () => {
+        tagHash.textContent = isHashVisible ? fullHash : foldedHash;
+        tagHash.title = isHashVisible ? "Click to hide hash" : "Click to show hash";
+    };
+
+    const toggleHashVisibility = () => {
+        isHashVisible = !isHashVisible;
+        renderHash();
+    };
+
+    tagHash.addEventListener("click", toggleHashVisibility);
+    tagHash.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggleHashVisibility();
+        }
+    });
+
+    renderHash();
 
     const tagCommit = document.createElement("span");
     tagCommit.className = "tag-commit";
