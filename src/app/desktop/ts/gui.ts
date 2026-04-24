@@ -9,6 +9,7 @@ import {createRefreshFileList} from "./modules/refreshFileList";
 import {setupEventListeners, fetchInitialStats, type MutationPayload} from "./modules/listener";
 import {setupButtonHandlers} from "./modules/buttons";
 import {createRepoContextInfo} from "./modules/El";
+import {setupBtnCreateTag} from "./modules/buttons/btnCreateTag";
 import {invoke} from "@tauri-apps/api/core";
 
 // UI elements
@@ -228,6 +229,12 @@ const buttonHandlers = setupButtonHandlers({
     resetStats,
     printLog,
     onRepoContextChange: (path) => repoContextInfo.update(path)
+});
+
+setupBtnCreateTag({
+    tagUI,
+    tagListEl,
+    printLog
 });
 
 const restoreLastOpenedFolder = async () => {
