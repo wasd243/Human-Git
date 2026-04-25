@@ -95,6 +95,7 @@ async fn main() -> anyhow::Result<()> {
             handlers::list_remotes,
             handlers::list_tags,
             handlers::create_tag,
+            handlers::push_tag,
             handlers::push_tags,
             handlers::get_working_status,
             open_folder::update_repo_path,

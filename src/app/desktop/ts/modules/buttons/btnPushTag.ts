@@ -12,7 +12,7 @@ export const setupBtnPushTag = ({
     btnPushTag.addEventListener("click", async () => {
         try {
             printLog("[GIT] Pushing all tags to origin...");
-            const result = await invoke<string>("push_tags");
+            const result = await invoke<string>("push_tag");
             printLog(`[SUCCESS] ${result}`);
         } catch (e) {
             printLog(`[ERR] Failed to push tags: ${e}`);

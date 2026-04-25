@@ -214,7 +214,7 @@ pub async fn create_tag(
 }
 
 #[tauri::command]
-pub async fn push_tags(
+pub async fn push_tag(
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
     let path = get_repo_path(None, &state).await?;
@@ -223,6 +223,14 @@ pub async fn push_tags(
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
+}
+
+// Backward-compatible alias (plural)
+#[tauri::command]
+pub async fn push_tags(
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
+    push_tag(state).await
 }
 
 #[tauri::command]
