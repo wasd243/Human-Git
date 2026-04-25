@@ -5,14 +5,6 @@ export interface TagInfo {
     commit: string;
 }
 
-const escapeHtml = (value: string): string =>
-    value
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-
 const formatRelativeDays = (unixSeconds: number): string => {
     const nowSeconds = Math.floor(Date.now() / 1000);
     const diffSeconds = Math.max(0, nowSeconds - unixSeconds);
@@ -23,29 +15,73 @@ const formatRelativeDays = (unixSeconds: number): string => {
     return `${days} days ago`;
 };
 
-const buildHeaderRow = (): string => `
-<div class="tag-item tag-item-header">
-    <span class="tag-name">Tag</span>
-    <span class="tag-hash">Hash</span>
-    <span class="tag-created">Created</span>
-    <span class="tag-commit">Commit</span>
-</div>
-`;
+const createTagHeaderRow = (): HTMLDivElement => {
+    const row = document.createElement("div");
+    row.className = "tag-item tag-item-header";
 
-const buildTagRow = (tagInfo: TagInfo): string => `
-<div class="tag-item">
-    <span class="tag-name">${escapeHtml(tagInfo.tag)}</span>
-    <button
-        type="button"
-        class="tag-hash tag-hash-toggle"
-        data-full-hash="${escapeHtml(tagInfo.hash)}"
-        aria-expanded="false"
-        title="Click to show hash"
-    >+Hash</button>
-    <span class="tag-created">${formatRelativeDays(tagInfo.created_at)}</span>
-    <span class="tag-commit" title="${escapeHtml(tagInfo.commit)}">${escapeHtml(tagInfo.commit)}</span>
-</div>
-`;
+    const tagName = document.createElement("span");
+    tagName.className = "tag-name";
+    tagName.textContent = "Tag";
+
+    const tagHash = document.createElement("span");
+    tagHash.className = "tag-hash";
+    tagHash.textContent = "Hash";
+
+    const tagCreated = document.createElement("span");
+    tagCreated.className = "tag-created";
+    tagCreated.textContent = "Created";
+
+    const tagCommit = document.createElement("span");
+    tagCommit.className = "tag-commit";
+    tagCommit.textContent = "Commit";
+
+    row.appendChild(tagName);
+    row.appendChild(tagHash);
+    row.appendChild(tagCreated);
+    row.appendChild(tagCommit);
+
+    return row;
+};
+
+const createTagRow = (tagInfo: TagInfo): HTMLDivElement => {
+    const row = document.createElement("div");
+    row.className = "tag-item";
+
+    const tagName = document.createElement("span");
+    tagName.className = "tag-name";
+    tagName.textContent = tagInfo.tag;
+
+    const hashButton = document.createElement("button");
+    hashButton.type = "button";
+    hashButton.className = "tag-hash tag-hash-toggle";
+    hashButton.dataset.fullHash = tagInfo.hash;
+    hashButton.setAttribute("aria-expanded", "false");
+    hashButton.title = "Click to show hash";
+    hashButton.textContent = "+Hash";
+
+    const tagCreated = document.createElement("span");
+    tagCreated.className = "tag-created";
+    tagCreated.textContent = formatRelativeDays(tagInfo.created_at);
+
+    const tagCommit = document.createElement("span");
+    tagCommit.className = "tag-commit";
+    tagCommit.title = tagInfo.commit;
+    tagCommit.textContent = tagInfo.commit;
+
+    row.appendChild(tagName);
+    row.appendChild(hashButton);
+    row.appendChild(tagCreated);
+    row.appendChild(tagCommit);
+
+    return row;
+};
+
+const createEmptyRow = (): HTMLDivElement => {
+    const emptyRow = document.createElement("div");
+    emptyRow.className = "tag-item tag-item-empty";
+    emptyRow.textContent = "No tags found.";
+    return emptyRow;
+};
 
 const bindHashToggleHandlers = (tagListEl: HTMLElement) => {
     const hashButtons = tagListEl.querySelectorAll<HTMLButtonElement>(".tag-hash-toggle");
@@ -69,12 +105,20 @@ const bindHashToggleHandlers = (tagListEl: HTMLElement) => {
 };
 
 export const renderTagList = (tagListEl: HTMLElement, tags: TagInfo[]) => {
+    tagListEl.replaceChildren();
+
     if (tags.length === 0) {
-        tagListEl.innerHTML = `<div class="tag-item tag-item-empty">No tags found.</div>`;
+        tagListEl.appendChild(createEmptyRow());
         return;
     }
 
-    const rows = tags.map(buildTagRow).join("");
-    tagListEl.innerHTML = `${buildHeaderRow()}${rows}`;
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild(createTagHeaderRow());
+
+    for (const tagInfo of tags) {
+        fragment.appendChild(createTagRow(tagInfo));
+    }
+
+    tagListEl.appendChild(fragment);
     bindHashToggleHandlers(tagListEl);
 };
