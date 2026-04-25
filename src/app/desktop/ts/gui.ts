@@ -10,6 +10,7 @@ import {setupEventListeners, fetchInitialStats, type MutationPayload} from "./mo
 import {setupButtonHandlers} from "./modules/buttons";
 import {createRepoContextInfo} from "./modules/El";
 import {setupBtnCreateTag} from "./modules/buttons/btnCreateTag";
+import {setupBtnPushTag} from "./modules/buttons/btnPushTag";
 import {invoke} from "@tauri-apps/api/core";
 
 // UI elements
@@ -70,6 +71,7 @@ const signingDisableConfirmOverlay = document.getElementById("signing-disable-co
 const btnSigningDisableCancel = document.getElementById("btn-signing-disable-cancel")!;
 const btnSigningDisableConfirm = document.getElementById("btn-signing-disable-confirm")!;
 const signingVerifiedBadge = document.getElementById("signing-verified-badge")!;
+const btnPushTag = document.getElementById("btn-push-tag")!;
 
 // Build signing mode + GPG controls dynamically so HTML changes are not required.
 const sshSigningSection = sshKeySelect.closest(".ssh-signing-section") as HTMLElement;
@@ -234,6 +236,11 @@ const buttonHandlers = setupButtonHandlers({
 setupBtnCreateTag({
     tagUI,
     tagListEl,
+    printLog
+});
+
+setupBtnPushTag({
+    btnPushTag,
     printLog
 });
 

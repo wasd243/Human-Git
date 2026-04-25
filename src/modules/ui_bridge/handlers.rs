@@ -1,6 +1,6 @@
 use crate::modules::operations::{
     add, commit, commit_and_push as quick_deploy, fetch, init, pull, push, remote, tag,
-    tag_operation::create_tag as tag_create,
+    tag_operation::{create_tag as tag_create, push_tag as tag_push},
 };
 use crate::modules::repo::{diff, history};
 use crate::AppState;
@@ -208,6 +208,18 @@ pub async fn create_tag(
     let path = get_repo_path(None, &state).await?;
 
     tokio::task::spawn_blocking(move || tag_create::create_tag(&path, &tag_name))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn push_tags(
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
+    let path = get_repo_path(None, &state).await?;
+
+    tokio::task::spawn_blocking(move || tag_push::push_tags(&path))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
