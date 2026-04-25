@@ -64,6 +64,7 @@ pub fn create_tag(repo_path: &str, tag_name: &str) -> Result<String> {
         .arg("-C")
         .arg(repo_path)
         .arg("tag")
+        .arg("--")
         .arg(name)
         .output()
         .context("Failed to execute 'git tag' command")?;
