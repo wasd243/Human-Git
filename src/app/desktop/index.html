@@ -177,6 +177,7 @@
     <div id="tag-ui-toolbar">
         <div id="tag-ui-actions">
             <button id="btn-create-tag" class="human-git-main-btn pull-btn" type="button">Create Tag</button>
+            <button id="btn-delete-tag" class="human-git-main-btn pull-btn danger-btn" type="button">Delete Tag</button>
             <button id="btn-push-tag" class="human-git-main-btn pull-btn" type="button">Push Tags</button>
         </div>
     </div>
@@ -193,6 +194,17 @@
             <div class="confirm-buttons">
                 <button id="btn-tag-create-cancel" class="human-git-main-btn pull-btn">Cancel</button>
                 <button id="btn-tag-create-confirm" class="human-git-main-btn pull-btn">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tag-delete-confirm-overlay" class="confirm-overlay hidden">
+        <div class="confirm-dialog">
+            <p>Delete a local tag? This action cannot be undone.</p>
+            <textarea id="tag-delete-name-input" placeholder="Enter tag name to delete (e.g. v1.2.0)"></textarea>
+            <div class="confirm-buttons">
+                <button id="btn-tag-delete-cancel" class="human-git-main-btn pull-btn">Cancel</button>
+                <button id="btn-tag-delete-confirm" class="human-git-main-btn pull-btn danger-btn">Delete</button>
             </div>
         </div>
     </div>

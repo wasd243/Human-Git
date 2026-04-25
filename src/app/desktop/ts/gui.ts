@@ -11,6 +11,7 @@ import {setupButtonHandlers} from "./modules/buttons";
 import {createRepoContextInfo} from "./modules/El";
 import {setupBtnCreateTag} from "./modules/buttons/btnCreateTag";
 import {setupBtnPushTag} from "./modules/buttons/btnPushTag";
+import {setupBtnDeleteTag} from "./modules/buttons/btnDeleteTag";
 import {invoke} from "@tauri-apps/api/core";
 
 // UI elements
@@ -72,6 +73,11 @@ const btnSigningDisableCancel = document.getElementById("btn-signing-disable-can
 const btnSigningDisableConfirm = document.getElementById("btn-signing-disable-confirm")!;
 const signingVerifiedBadge = document.getElementById("signing-verified-badge")!;
 const btnPushTag = document.getElementById("btn-push-tag")!;
+const btnDeleteTag = document.getElementById("btn-delete-tag")!;
+const tagDeleteConfirmOverlay = document.getElementById("tag-delete-confirm-overlay")!;
+const tagDeleteNameInput = document.getElementById("tag-delete-name-input") as HTMLTextAreaElement;
+const btnTagDeleteCancel = document.getElementById("btn-tag-delete-cancel")!;
+const btnTagDeleteConfirm = document.getElementById("btn-tag-delete-confirm")!;
 
 // Build signing mode + GPG controls dynamically so HTML changes are not required.
 const sshSigningSection = sshKeySelect.closest(".ssh-signing-section") as HTMLElement;
@@ -241,6 +247,16 @@ setupBtnCreateTag({
 
 setupBtnPushTag({
     btnPushTag,
+    printLog
+});
+
+setupBtnDeleteTag({
+    btnDeleteTag,
+    tagDeleteConfirmOverlay,
+    tagDeleteNameInput,
+    btnTagDeleteCancel,
+    btnTagDeleteConfirm,
+    tagListEl,
     printLog
 });
 

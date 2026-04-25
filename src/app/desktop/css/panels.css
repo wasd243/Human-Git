@@ -490,6 +490,7 @@
 }
 
 #btn-create-tag,
+#btn-delete-tag,
 #btn-push-tag {
     width: 180px;
 }
@@ -627,7 +628,8 @@
     gap: 12px;
 }
 
-#tag-create-name-input {
+#tag-create-name-input,
+#tag-delete-name-input {
     width: 100%;
     min-height: 74px;
     resize: vertical;
@@ -641,7 +643,8 @@
     margin-bottom: 14px;
 }
 
-#tag-create-name-input:focus {
+#tag-create-name-input:focus,
+#tag-delete-name-input:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.45);
 }
