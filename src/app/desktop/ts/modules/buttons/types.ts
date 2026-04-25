@@ -9,12 +9,15 @@ export interface SetupButtonHandlersParams {
     btnShowChanges: HTMLElement;
     btnGitInit: HTMLElement;
     btnOpenPullUI: HTMLElement;
+    btnOpenTagUI: HTMLElement;
     topUI: HTMLElement;
     bottomUI: HTMLElement;
     rightUI: HTMLElement;
+    tagUI: HTMLElement;
     btnCloseTopUI: HTMLElement;
     btnCloseBottomUI: HTMLElement;
     btnCloseRightUI: HTMLElement;
+    btnCloseTagUI: HTMLElement;
     btnDoGitInit: HTMLElement;
     btnChooseFolder: HTMLElement;
     btnPullAction: HTMLElement;
@@ -28,6 +31,7 @@ export interface SetupButtonHandlersParams {
     remoteInputPanel: HTMLElement;
     remoteUrlInput: HTMLTextAreaElement;
     remoteListEl: HTMLElement;
+    tagListEl: HTMLElement;
     pullConfirmOverlay: HTMLElement;
     btnPullCancel: HTMLElement;
     btnPullConfirm: HTMLElement;

@@ -2,7 +2,12 @@
 
 - [x] GPG signing support;
 - [ ] branch graph;
-- [ ] tags graph;
+- [x] tags graph;
+- [ ] create a tag
+- [ ] create a branch;
+- [ ] create a PR;
+- [ ] delete a tag;
+- [ ] delete a branch;
 - [ ] PR graph;
 - [ ] web-link to PR;
 - [ ] web-link to CI/CD;
@@ -24,4 +29,4 @@
 - [x]  `v0.1.0-alpha.10-pre-1`;
 - [x]  `v0.1.0-alpha.10-pre-2`;
 - [x]  `v0.1.0-alpha.10-pre-3`;
-- [ ]  `v0.1.0-alpha.10`;
+- [x]  `v0.1.0-alpha.10`;

@@ -40,6 +40,25 @@ button {
   margin: 0 auto; /* Center it */
 }
 
+.human-git-component-btn {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px) saturate(120%);
+    border: 0.5px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgba(242, 234, 218, 0.9);
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.2em;
+    font-size: 13px;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    margin: 0 auto;
+}
+
 .human-git-main-btn:hover {
   width: 450px; /* Extend slightly, like unrolling a scroll */
   background: rgba(255, 255, 255, 0.12);
@@ -147,6 +166,14 @@ button {
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
+    margin: 0;
+    z-index: 10;
+}
+
+#btn-open-tag-ui {
+    position: fixed;
+    top: 90%;
+    left: 94%;
     margin: 0;
     z-index: 10;
 }

@@ -1,4 +1,7 @@
-use crate::modules::operations::{add, commit, commit_and_push as quick_deploy, fetch, init, pull, push, remote};
+use crate::modules::operations::{
+    add, commit, commit_and_push as quick_deploy, fetch, init, pull, push, remote, tag,
+    tag_operation::{create_tag as tag_create, delete_tag as tag_delete, push_tag as tag_push},
+};
 use crate::modules::repo::{diff, history};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
@@ -180,6 +183,56 @@ pub async fn list_remotes(
     let path = get_repo_path(None, &state).await?;
 
     tokio::task::spawn_blocking(move || remote::list_remotes(&path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_tags(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<tag::TagInfo>, String> {
+    let path = get_repo_path(None, &state).await?;
+
+    tokio::task::spawn_blocking(move || tag::list_tags(&path))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn create_tag(
+    state: tauri::State<'_, AppState>,
+    tag_name: String,
+) -> Result<String, String> {
+    let path = get_repo_path(None, &state).await?;
+
+    tokio::task::spawn_blocking(move || tag_create::create_tag(&path, &tag_name))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_tag(
+    state: tauri::State<'_, AppState>,
+    tag_name: String,
+) -> Result<String, String> {
+    let path = get_repo_path(None, &state).await?;
+
+    tokio::task::spawn_blocking(move || tag_delete::delete_tag(&path, &tag_name))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn push_tag(
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
+    let path = get_repo_path(None, &state).await?;
+
+    tokio::task::spawn_blocking(move || tag_push::push_tags(&path))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())

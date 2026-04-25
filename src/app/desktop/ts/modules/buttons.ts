@@ -7,9 +7,11 @@ import {
 import {setupBtnShowChanges} from "./buttons/btnShowChanges";
 import {setupBtnPullAction} from "./buttons/btnPullAction";
 import {setupBtnOpenPullUI} from "./buttons/btnOpenPullUI";
+import {setupBtnOpenTagUI} from "./buttons/btnOpenTagUI";
 import {setupBtnCloseTopUI} from "./buttons/btnCloseTopUI";
 import {setupBtnChooseFolder} from "./buttons/btnChooseFolder";
 import {setupBtnCloseRightUI} from "./buttons/btnCloseRightUI";
+import {setupBtnCloseTagUI} from "./buttons/btnCloseTagUI";
 import {setupBtnFetchPruneCancel} from "./buttons/btnFetchPruneCancel";
 import {applyFetchPruneVisualState} from "./buttons/fetchPruneToggleLabel";
 import {setupBtnDoGitInit} from "./buttons/btnDoGitInit";
@@ -31,22 +33,28 @@ import {setupBtnForcePushConfirm} from "./buttons/btnForcePushConfirm";
 import {setupBtnQuickDeploy} from "./buttons/btnQuickDeploy";
 import {setupBtnRemoteCancel} from "./buttons/btnRemoteCancel";
 import {setupBtnRemoteConfirm} from "./buttons/btnRemoteConfirm";
+import {setupBtnPullCancel} from "./buttons/btnPullCancel";
+import {setupBtnPullConfirm} from "./buttons/btnPullConfirm";
 import {applyForcePushToggleLabelState} from "./buttons/forcePushToggleLabel";
 import {asFileListEl} from "./buttons/fileListEl";
 import {asStagedListEl} from "./buttons/stagedListEl";
 import {createSigningController} from "./buttons/signingModeSelect";
 import {createRemoteMessageRow, isValidGitRemoteUrl, renderRemoteList} from "./buttons/printLog";
+import {renderTagList, type TagInfo} from "./buttons/listTag";
 
 export const setupButtonHandlers = ({
     btnShowChanges,
     btnGitInit,
     btnOpenPullUI,
+    btnOpenTagUI,
     topUI,
     bottomUI,
     rightUI,
+    tagUI,
     btnCloseTopUI,
     btnCloseBottomUI,
     btnCloseRightUI,
+    btnCloseTagUI,
     btnDoGitInit,
     btnChooseFolder,
     btnPullAction,
@@ -60,6 +68,7 @@ export const setupButtonHandlers = ({
     remoteInputPanel,
     remoteUrlInput,
     remoteListEl,
+    tagListEl,
     pullConfirmOverlay,
     btnPullCancel,
     btnPullConfirm,
@@ -168,16 +177,32 @@ export const setupButtonHandlers = ({
         return await invoke<string>("fetch_changes", {remote: ORIGIN_REMOTE, prune});
     };
 
+    const invokePull = async (): Promise<string> => {
+        return await invoke<string>("pull_changes");
+    };
+
     const showMainButtons = () => {
         (btnGitInit as HTMLButtonElement).style.display = "";
+        (btnOpenTagUI as HTMLButtonElement).style.display = "";
         (btnOpenPullUI as HTMLButtonElement).style.display = "";
         (btnShowChanges as HTMLButtonElement).style.display = "";
     };
 
     const hideMainButtons = () => {
         (btnGitInit as HTMLButtonElement).style.display = "none";
+        (btnOpenTagUI as HTMLButtonElement).style.display = "none";
         (btnOpenPullUI as HTMLButtonElement).style.display = "none";
         (btnShowChanges as HTMLButtonElement).style.display = "none";
+    };
+
+    const refreshTagList = async () => {
+        try {
+            const tags = await invoke<TagInfo[]>("list_tags");
+            renderTagList(tagListEl, tags);
+        } catch (e) {
+            tagListEl.innerHTML = `<div class="tag-item tag-item-empty">Failed to load tags.</div>`;
+            printLog(`[ERR] Failed to fetch tags: ${e}`);
+        }
     };
 
     applyForcePushVisualState(false);
@@ -235,6 +260,13 @@ export const setupButtonHandlers = ({
         refreshRemoteList
     });
 
+    setupBtnOpenTagUI({
+        btnOpenTagUI,
+        tagUI,
+        hideMainButtons,
+        refreshTagList
+    });
+
     setupBtnCloseRightUI({
         btnCloseRightUI,
         rightUI,
@@ -242,6 +274,12 @@ export const setupButtonHandlers = ({
         remoteConfirmOverlay,
         fetchPruneConfirmOverlay,
         remoteInputPanel,
+        showMainButtons
+    });
+
+    setupBtnCloseTagUI({
+        btnCloseTagUI,
+        tagUI,
         showMainButtons
     });
 
@@ -390,21 +428,17 @@ export const setupButtonHandlers = ({
         printLog
     });
 
-    btnPullCancel.addEventListener("click", () => {
-        pullConfirmOverlay.classList.add("hidden");
+    setupBtnPullCancel({
+        btnPullCancel,
+        pullConfirmOverlay
     });
 
-    btnPullConfirm.addEventListener("click", async () => {
-        pullConfirmOverlay.classList.add("hidden");
-        printLog("[GIT] Pulling current branch from origin...");
-
-        try {
-            const result = await invoke<string>("pull_changes");
-            printLog(`[SUCCESS] ${result}`);
-            await refreshFileList();
-        } catch (e) {
-            printLog(`[ERR] ${e}`);
-        }
+    setupBtnPullConfirm({
+        btnPullConfirm,
+        pullConfirmOverlay,
+        printLog,
+        refreshFileList,
+        invokePull
     });
 
     setupBtnRemoteCancel({

@@ -9,6 +9,9 @@ import {createRefreshFileList} from "./modules/refreshFileList";
 import {setupEventListeners, fetchInitialStats, type MutationPayload} from "./modules/listener";
 import {setupButtonHandlers} from "./modules/buttons";
 import {createRepoContextInfo} from "./modules/El";
+import {setupBtnCreateTag} from "./modules/buttons/btnCreateTag";
+import {setupBtnPushTag} from "./modules/buttons/btnPushTag";
+import {setupBtnDeleteTag} from "./modules/buttons/btnDeleteTag";
 import {invoke} from "@tauri-apps/api/core";
 
 // UI elements
@@ -18,12 +21,15 @@ const delEl = document.getElementById("del-value")!;
 const btnShowChanges = document.getElementById("btn-show-changes")!;
 const btnGitInit = document.getElementById("btn-git-init")!;
 const btnOpenPullUI = document.getElementById("btn-open-pull-ui")!;
+const btnOpenTagUI = document.getElementById("btn-open-tag-ui")!;
 const topUI = document.getElementById("top-ui")!;
 const bottomUI = document.getElementById("bottom-ui")!;
 const rightUI = document.getElementById("right-ui")!;
+const tagUI = document.getElementById("tag-ui")!;
 const btnCloseTopUI = document.getElementById("btn-close-top-ui")!;
 const btnCloseBottomUI = document.getElementById("btn-close-bottom-ui")!;
 const btnCloseRightUI = document.getElementById("btn-close-right-ui")!;
+const btnCloseTagUI = document.getElementById("btn-close-tag-ui")!;
 const btnDoGitInit = document.getElementById("btn-do-git-init")!;
 const btnChooseFolder = document.getElementById("btn-choose-folder")!;
 const btnPullAction = document.getElementById("btn-pull-action")!;
@@ -37,6 +43,7 @@ const btnRemoteAction = document.getElementById("btn-remote-action")!;
 const remoteInputPanel = document.getElementById("remote-input-panel")!;
 const remoteUrlInput = document.getElementById("remote-url-input") as HTMLTextAreaElement;
 const remoteListEl = document.getElementById("remote-list")!;
+const tagListEl = document.getElementById("tag-list")!;
 const pullConfirmOverlay = document.getElementById("pull-confirm-overlay")!;
 const btnPullCancel = document.getElementById("btn-pull-cancel")!;
 const btnPullConfirm = document.getElementById("btn-pull-confirm")!;
@@ -65,6 +72,12 @@ const signingDisableConfirmOverlay = document.getElementById("signing-disable-co
 const btnSigningDisableCancel = document.getElementById("btn-signing-disable-cancel")!;
 const btnSigningDisableConfirm = document.getElementById("btn-signing-disable-confirm")!;
 const signingVerifiedBadge = document.getElementById("signing-verified-badge")!;
+const btnPushTag = document.getElementById("btn-push-tag")!;
+const btnDeleteTag = document.getElementById("btn-delete-tag")!;
+const tagDeleteConfirmOverlay = document.getElementById("tag-delete-confirm-overlay")!;
+const tagDeleteNameInput = document.getElementById("tag-delete-name-input") as HTMLTextAreaElement;
+const btnTagDeleteCancel = document.getElementById("btn-tag-delete-cancel")!;
+const btnTagDeleteConfirm = document.getElementById("btn-tag-delete-confirm")!;
 
 // Build signing mode + GPG controls dynamically so HTML changes are not required.
 const sshSigningSection = sshKeySelect.closest(".ssh-signing-section") as HTMLElement;
@@ -160,12 +173,15 @@ const buttonHandlers = setupButtonHandlers({
     btnShowChanges,
     btnGitInit,
     btnOpenPullUI,
+    btnOpenTagUI,
     topUI,
     bottomUI,
     rightUI,
+    tagUI,
     btnCloseTopUI,
     btnCloseBottomUI,
     btnCloseRightUI,
+    btnCloseTagUI,
     btnDoGitInit,
     btnChooseFolder,
     btnPullAction,
@@ -179,6 +195,7 @@ const buttonHandlers = setupButtonHandlers({
     remoteInputPanel,
     remoteUrlInput,
     remoteListEl,
+    tagListEl,
     pullConfirmOverlay,
     btnPullCancel,
     btnPullConfirm,
@@ -220,6 +237,27 @@ const buttonHandlers = setupButtonHandlers({
     resetStats,
     printLog,
     onRepoContextChange: (path) => repoContextInfo.update(path)
+});
+
+setupBtnCreateTag({
+    tagUI,
+    tagListEl,
+    printLog
+});
+
+setupBtnPushTag({
+    btnPushTag,
+    printLog
+});
+
+setupBtnDeleteTag({
+    btnDeleteTag,
+    tagDeleteConfirmOverlay,
+    tagDeleteNameInput,
+    btnTagDeleteCancel,
+    btnTagDeleteConfirm,
+    tagListEl,
+    printLog
 });
 
 const restoreLastOpenedFolder = async () => {

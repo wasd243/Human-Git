@@ -45,3 +45,4 @@ humangit_cache.db-wal
 
 # Aider chat bot cache
 --commit-message-extra-instructions=Always write commit messages in English using Conventional Commits format. DO NOT use Chinese
+.aider*
