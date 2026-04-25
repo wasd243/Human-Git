@@ -225,13 +225,6 @@ pub async fn push_tag(
         .map_err(|e| e.to_string())
 }
 
-// Backward-compatible alias (plural)
-#[tauri::command]
-pub async fn push_tags(
-    state: tauri::State<'_, AppState>,
-) -> Result<String, String> {
-    push_tag(state).await
-}
 
 #[tauri::command]
 pub async fn get_working_status(
