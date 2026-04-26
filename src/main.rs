@@ -26,10 +26,7 @@ pub mod modules {
             pub mod push_tag;
         }
     }
-    // Git core
-    pub mod git {
-        pub mod porcelain;
-    }
+    /// Git core is unnecessary because all core already exists in operations.
     // Communication bridge
     pub mod ui_bridge {
         pub mod handlers;
